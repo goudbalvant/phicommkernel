@@ -1,5 +1,8 @@
 ifeq ($(CONFIG_OF),y)
 
+PHICOMM_PROJECT_DTS_EXIST=$(shell ls $(srctree)/arch/arm/boot/$(PHICOMM_PROJECT_NAME)-dts 2>/dev/null)
+PROJECT_DTS=$(shell basename $(srctree)/arch/arm/boot/$(PHICOMM_PROJECT_NAME)-dts/*.dts 2>/dev/null)
+
 dtb-$(CONFIG_ARCH_MSM8974) += msm8974-v1-cdp.dtb \
 	msm8974-v1-fluid.dtb \
 	msm8974-v1-liquid.dtb \
@@ -28,42 +31,14 @@ dtb-$(CONFIG_ARCH_MSM8974) += msm8974-v1-cdp.dtb \
 	msm8974pro-ac-pm8941-liquid.dtb \
 	msm8974pro-ac-pm8941-mtp.dtb \
 	msm8974pro-ac-pma8084-pm8941-mtp.dtb
-dtb-$(CONFIG_ARCH_MSM8909) += msm8909-sim.dtb \
-	msm8909-rumi.dtb \
-	msm8909-qrd-skua.dtb \
-	msm8909-qrd-skuc.dtb \
-	msm8909-qrd-skue.dtb \
-	msm8909-cdp.dtb \
-	msm8909-mtp.dtb \
-	msm8909-mtp-smb1360.dtb \
-	msm8909-pm8916-mtp-smb1360.dtb \
-	msm8909-512mb-mtp-smb1360.dtb \
-	msm8909-1gb-qrd-skua.dtb \
-	msm8909-1gb-qrd-skuc.dtb \
-	msm8909-1gb-qrd-skue.dtb \
-	msm8909-1gb-cdp.dtb \
-	msm8909-1gb-mtp.dtb \
-	msm8909-1gb-rcm.dtb \
-	msm8909-pm8916-1gb-rcm.dtb \
-	msm8909-pm8916-mtp.dtb \
-	msm8909-pm8916-cdp.dtb \
-	msm8909-qhd-cdp.dtb \
-	msm8909-qhd-rcm.dtb \
-	msm8909-pm8916-1gb-qhd-rcm.dtb \
-	msm8909-pm8916-qhd-rcm.dtb \
-	msm8208-cdp.dtb \
-	msm8208-mtp.dtb \
-	msm8208-1gb-cdp.dtb \
-	msm8208-1gb-mtp.dtb \
-	msm8208-qrd-skua.dtb \
-	msm8208-qrd-skuc.dtb \
-	msm8208-qrd-skue.dtb \
-	msm8208-1gb-qrd-skua.dtb \
-	msm8208-1gb-qrd-skuc.dtb \
-	msm8208-1gb-qrd-skue.dtb \
-	msm8208-1gb-rcm.dtb \
-	msm8208-qhd-cdp.dtb \
-	msm8208-qhd-rcm.dtb
+
+ifneq ($(PHICOMM_PROJECT_DTS_EXIST),)
+dtb-$(CONFIG_ARCH_MSM8909) += msm8909-qrd-skuc-PROJECT-USE.dtb
+else
+dtb-$(CONFIG_ARCH_MSM8909) += \
+	msm8909-1gb-qrd-skuc.dtb
+endif
+
 dtb-$(CONFIG_ARCH_MSM8916) += msm8916-sim.dtb \
 	msm8916-rumi.dtb \
 	msm8916-cdp.dtb \
@@ -254,8 +229,23 @@ targets += dtbs
 targets += $(addprefix ../, $(DTB_LIST))
 endif
 
+# gxh modify for compile PROJECT  dts
+ifneq ($(PHICOMM_PROJECT_DTS_EXIST),)
+$(obj)/../usedtsi/%.dts: $(src)/%.dts FORCE
+	@rm -rf $(obj)/../usedtsi
+	@mkdir $(obj)/../usedtsi
+	@cp -rf $(srctree)/arch/arm/boot/dts/qcom/*.dtsi $(obj)/../usedtsi/
+	@cp -rf $(srctree)/arch/arm/boot/$(PHICOMM_PROJECT_NAME)-dts/* $(obj)/../usedtsi/
+	@cd $(obj)/../usedtsi/ && ln -s $(PROJECT_DTS) msm8909-qrd-skuc-PROJECT-USE.dts && cd - >/dev/null
+
+$(obj)/../%.dtb: $(obj)/../usedtsi/%.dts FORCE
+	$(call if_changed_dep,dtc)
+	@mv $@ $(shell dirname $@)/$(patsubst %.dts,%.dtb,$(PROJECT_DTS))
+
+else
 $(obj)/../%.dtb: $(src)/%.dts FORCE
 	$(call if_changed_dep,dtc)
+endif
 
 dtbs: $(addprefix $(obj)/../,$(DTB_LIST))
 
