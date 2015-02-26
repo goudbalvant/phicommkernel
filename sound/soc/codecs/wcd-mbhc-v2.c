@@ -86,6 +86,8 @@ enum wcd_mbhc_cs_mb_en_flag {
 	WCD_MBHC_EN_NONE,
 };
 
+static int ext_spk_amp_gpio = -1;
+
 static void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 				struct snd_soc_jack *jack, int status, int mask)
 {
@@ -246,7 +248,6 @@ static int wcd_event_notify(struct notifier_block *self, unsigned long val,
 	bool micbias2;
 	bool micbias1;
 
-	pr_debug("%s: event %d\n", __func__, event);
 	micbias2 = (snd_soc_read(codec, MSM8X16_WCD_A_ANALOG_MICB_2_EN) & 0x80);
 	micbias1 = (snd_soc_read(codec, MSM8X16_WCD_A_ANALOG_MICB_1_EN) & 0x80);
 	switch (event) {
@@ -311,6 +312,7 @@ static int wcd_event_notify(struct notifier_block *self, unsigned long val,
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
 		break;
 	case WCD_EVENT_POST_HPHR_PA_OFF:
+                gpio_direction_output(ext_spk_amp_gpio, 0);
 		if (mbhc->hph_status & SND_JACK_OC_HPHR)
 			hphrocp_off_report(mbhc, SND_JACK_OC_HPHR);
 		clear_bit(WCD_MBHC_EVENT_PA_HPHR, &mbhc->event_state);
@@ -333,6 +335,11 @@ static int wcd_event_notify(struct notifier_block *self, unsigned long val,
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_PULLUP);
 		break;
 	case WCD_EVENT_PRE_HPHR_PA_ON:
+                if (mbhc->hph_status & SND_JACK_HEADSET){
+			gpio_direction_output(ext_spk_amp_gpio, 0);
+		}else{
+			gpio_direction_output(ext_spk_amp_gpio, 1);
+		}
 		set_bit(WCD_MBHC_EVENT_PA_HPHR, &mbhc->event_state);
 		/* check if micbias is enabled */
 		if (micbias2)
@@ -2010,6 +2017,9 @@ void wcd_mbhc_stop(struct wcd_mbhc *mbhc)
 		mbhc->mbhc_fw = NULL;
 		mbhc->mbhc_cal = NULL;
 	}
+        if (gpio_is_valid(ext_spk_amp_gpio))
+                gpio_free(ext_spk_amp_gpio);
+
 	pr_debug("%s: leave\n", __func__);
 }
 EXPORT_SYMBOL(wcd_mbhc_stop);
@@ -2197,6 +2207,16 @@ int wcd_mbhc_init(struct wcd_mbhc *mbhc, struct snd_soc_codec *codec,
 		       mbhc->intr_ids->hph_right_ocp);
 		goto err_hphr_ocp_irq;
 	}
+ 
+        ext_spk_amp_gpio = of_get_named_gpio(card->dev->of_node,
+                "qcom,ext-spk-amp-gpio", 0);
+        if (ext_spk_amp_gpio >= 0) {
+                ret = gpio_request(ext_spk_amp_gpio, "ext_spk_amp_gpio");
+                if (ret) {
+                        pr_err("%s: gpio_request failed for ext_spk_amp_gpio.\n",
+                                __func__);
+                }
+        }
 
 	pr_debug("%s: leave ret %d\n", __func__, ret);
 	return ret;
