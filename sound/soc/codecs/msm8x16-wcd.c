@@ -126,6 +126,7 @@ enum {
 static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static const DECLARE_TLV_DB_SCALE(analog_gain, 0, 25, 1);
 static struct snd_soc_dai_driver msm8x16_wcd_i2s_dai[];
+static int ext_spk_amp_gpio = -1;
 
 #define MSM8X16_WCD_ACQUIRE_LOCK(x) \
 	mutex_lock_nested(&x, SINGLE_DEPTH_NESTING);
@@ -3056,14 +3057,28 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
-		if (w->shift == 5)
+		if (w->shift == 5){
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_PRE_HPHL_PA_ON);
-		else if (w->shift == 4)
+                	printk("##### in the status HPHL PA ON #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
+		}
+		else if (w->shift == 4){
+			gpio_direction_output(ext_spk_amp_gpio, 1);
+			usleep(2);
+			gpio_direction_output(ext_spk_amp_gpio, 0);
+			usleep(2);
+			gpio_direction_output(ext_spk_amp_gpio, 1);
+			usleep(2);
+			gpio_direction_output(ext_spk_amp_gpio, 0);
+			usleep(2);
+			gpio_direction_output(ext_spk_amp_gpio, 1);
+			printk("##### in the status HPHR PA ON #####\n");
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_PRE_HPHR_PA_ON);
 		snd_soc_update_bits(codec,
 				MSM8X16_WCD_A_ANALOG_NCP_FBCTRL, 0x20, 0x20);
+		}
 		break;
 
 	case SND_SOC_DAPM_POST_PMU:
@@ -3104,11 +3119,15 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHL_PA_OFF);
+			printk("##### in the status HPHL PA OFF #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
 		} else if (w->shift == 4) {
 			clear_bit(WCD_MBHC_HPHR_PA_OFF_ACK,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHR_PA_OFF);
+			printk("##### in the status HPHR PA OFF #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
 		}
 		usleep_range(4000, 4100);
 
@@ -4730,6 +4749,16 @@ static int msm8x16_wcd_spmi_probe(struct spmi_device *spmi)
 	ret = snd_soc_register_codec(&spmi->dev, &soc_codec_dev_msm8x16_wcd,
 				     msm8x16_wcd_i2s_dai,
 				     ARRAY_SIZE(msm8x16_wcd_i2s_dai));
+        ext_spk_amp_gpio = of_get_named_gpio(spmi->dev.of_node,
+                "qcom,ext-spk-amp-gpio", 0);
+        if (ext_spk_amp_gpio >= 0) {
+                ret = gpio_request(ext_spk_amp_gpio, "ext_spk_amp_gpio");
+                if (ret) {
+                        pr_err("%s: gpio_request failed for ext_spk_amp_gpio.\n",
+                                __func__);
+                }
+        }
+	
 	if (ret) {
 		dev_err(&spmi->dev,
 			"%s:snd_soc_register_codec failed with error %d\n",
@@ -4755,6 +4784,8 @@ static int msm8x16_wcd_spmi_remove(struct spmi_device *spmi)
 {
 	struct msm8x16_wcd *msm8x16 = dev_get_drvdata(&spmi->dev);
 
+        if (gpio_is_valid(ext_spk_amp_gpio))
+                gpio_free(ext_spk_amp_gpio);
 	msm8x16_wcd_device_exit(msm8x16);
 	return 0;
 }
@@ -4780,6 +4811,7 @@ static int msm8x16_wcd_spmi_suspend(struct spmi_device *spmi,
 {
 	struct resource *wcd_resource;
 
+	gpio_direction_output(ext_spk_amp_gpio, 0);
 	wcd_resource = spmi_get_resource(spmi, NULL, IORESOURCE_MEM, 0);
 	if (!wcd_resource) {
 		dev_err(&spmi->dev, "Unable to get CDC SPMI resource\n");

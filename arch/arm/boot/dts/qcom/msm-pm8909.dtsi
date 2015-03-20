@@ -539,7 +539,7 @@
 
 			qcom,cdc-on-demand-supplies = "cdc-vdd-mic-bias",
 						      "cdc-vdd-spkdrv";
-                        qcom,cdc-micbias-cfilt-mv = <2700000>;
+			qcom,ext-spk-amp-gpio = <&msm_gpio 98 0x0>;
 		};
 
 		pm8909_conga_analog: 8909_wcd_codec@f100 {
