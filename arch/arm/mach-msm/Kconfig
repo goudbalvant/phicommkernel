@@ -1050,4 +1050,10 @@ config FSM9900_GSM_NL
 	  The serial port connection can be established to communicate with the
 	  GSM NL module.
 
+config PHICOMM_BOARD_E653Lw                                                           
+    bool "E653Lw project config file"
+    default n
+    help
+      E653Lw project macro define
+
 endif

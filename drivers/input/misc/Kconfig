@@ -850,5 +850,16 @@ config SENSORS_BMI058
 	 If you say yes here, you get support for Bosch Sensortec's
 	 sensor driver of BMI058.
 
+config SENSORS_TMD2772X
+    tristate "TMD2772X proximity and light sensor"
+    depends on I2C
+    default n
+    help
+      Say Y here to enable the TMD2772X Proximity
+      Sensor with Ambient Light Sensor.
+     
+      To compile this driver as a module, choose M here: the
+      module will be called TMD2772X.
+
 endif
 

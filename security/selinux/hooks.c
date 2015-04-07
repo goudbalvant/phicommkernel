@@ -129,7 +129,7 @@ static int __init selinux_enabled_setup(char *str)
 }
 __setup("selinux=", selinux_enabled_setup);
 #else
-int selinux_enabled = 1;
+int selinux_enabled = 0;
 #endif
 
 static struct kmem_cache *sel_inode_cache;

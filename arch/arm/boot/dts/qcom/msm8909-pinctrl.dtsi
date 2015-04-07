@@ -1265,6 +1265,19 @@
 				bias-pull-down;
 			};
 		};
+		tmd2772x_int_pin{
+			qcom,pins = <&gp 94>;
+			qcom,pin-func = <0>;
+			qcom,num-grp-pins = <1>;
+			label = "tmd2772x-irq";
+			tmd2772x_default: tmd2772x_default {
+				drive-strength = <6>;
+				bias-pull-up;
+			};
+			tmd2772x_sleep: tmd2772x_sleep {
+				drive-strength = <2>;
+			};
+		};
 
 		smb_int_pin {
 			qcom,pins = <&gp 58>;
