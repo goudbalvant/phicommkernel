@@ -12,7 +12,7 @@
  */
 &tlmm_pinmux {
 	SL610W1D_pins {
-		qcom,pins = <&gp 31>, <&gp 0>;
+		qcom,pins = <&gp 31>, <&gp 32>;
 		qcom,num-grp-pins = <2>;
 		qcom,pin-func = <0>;
 		label = "SL610W1D_pins";
@@ -30,9 +30,9 @@
 		pinctrl-names = "flash_default";
 		pinctrl-0 = <&SL610W1D_default>;
 		qcom,flash-en = <&msm_gpio 31 0>;
-		qcom,flash-now = <&msm_gpio 0 0>;
+		qcom,flash-now = <&msm_gpio 32 0>;
 		qcom,op-seq = "flash_en", "flash_now";
-		qcom,torch-seq-val = <1 0>;
+		qcom,torch-seq-val = <0 1>;
 		qcom,flash-seq-val = <1 1>;
 		linux,name = "flashlight";
 		linux,default-trigger = "flashlight-trigger";
@@ -70,25 +70,41 @@
 		pinctrl-1 = <&cam_sensor_mclk1_sleep &cam_sensor_front_sleep>;
 		gpios = <&msm_gpio 27 0>,
 			<&msm_gpio 28 0>,
-			<&msm_gpio 33 0>;
+			<&msm_gpio 33 0>,
+			<&msm_gpio 16 0>;
 		qcom,gpio-reset = <1>;
 		qcom,gpio-standby = <2>;
-		qcom,gpio-req-tbl-num = <0 1 2>;
-		qcom,gpio-req-tbl-flags = <1 0 0>;
+		qcom,gpio-vana = <3>;
+		qcom,gpio-req-tbl-num = <0 1 2 3>;
+		qcom,gpio-req-tbl-flags = <1 0 0 0>;
 		qcom,gpio-req-tbl-label = "CAMIF_MCLK",
 					"CAM_RESET",
-					"CAM_STANDBY";
-		qcom,gpio-set-tbl-num = <1 1>;
-		qcom,gpio-set-tbl-flags = <0 2>;
-		qcom,gpio-set-tbl-delay = <1000 4000>;
+					"CAM_STANDBY",
+					"CAM_VANA";
+		qcom,gpio-set-tbl-num = <1 1 1>;
+		qcom,gpio-set-tbl-flags = <0 2 0>;
+		qcom,gpio-set-tbl-delay = <1000 4000 1000>;
 		qcom,csi-lane-assign = <0x0004>;
 		qcom,csi-lane-mask = <0x18>;
 		qcom,sensor-position = <1>;
-		qcom,sensor-mode = <0>;
+		qcom,sensor-mode = <1>;
 		qcom,cci-master = <0>;
 		clocks = <&clock_gcc clk_mclk1_clk_src>,
 				<&clock_gcc clk_gcc_camss_mclk1_clk>;
 		clock-names = "cam_src_clk", "cam_clk";
+	};
+
+	actuator0: qcom,actuator@18 {
+		cell-index = <3>;
+		reg = <0x18>;
+		compatible = "qcom,actuator";
+		qcom,cci-master = <0>;
+		cam_vaf-supply = <&pm8909_l8>;
+		qcom,cam-vreg-name = "cam_vaf";
+		qcom,cam-vreg-type = <0>;
+		qcom,cam-vreg-min-voltage = <2850000>;
+		qcom,cam-vreg-max-voltage = <2900000>;
+		qcom,cam-vreg-op-mode = <80000>;
 	};
 
 	qcom,camera@0 {
@@ -98,6 +114,7 @@
 		qcom,csiphy-sd-index = <0>;
 		qcom,csid-sd-index = <0>;
 		qcom,mount-angle = <90>;
+		qcom,actuator-src = <&actuator0>;
 		qcom,led-flash-src = <&led_flash0>;
 		cam_vana-supply = <&pm8909_l17>;
 		cam_vio-supply = <&pm8909_l6>;
@@ -112,14 +129,23 @@
 		pinctrl-1 = <&cam_sensor_mclk0_sleep &cam_sensor_rear_sleep>;
 		gpios = <&msm_gpio 26 0>,
 			<&msm_gpio 35 0>,
-			<&msm_gpio 34 0>;
+			<&msm_gpio 34 0>,
+			<&msm_gpio 16 0>,
+			<&msm_gpio 17 0>;
 		qcom,gpio-reset = <1>;
 		qcom,gpio-standby = <2>;
-		qcom,gpio-req-tbl-num = <0 1 2>;
-		qcom,gpio-req-tbl-flags = <1 0 0>;
+		qcom,gpio-vana = <3>;
+		qcom,gpio-vdig = <4>;
+		qcom,gpio-req-tbl-num = <0 1 2 3 4>;
+		qcom,gpio-req-tbl-flags = <1 0 0 0 0>;
 		qcom,gpio-req-tbl-label = "CAMIF_MCLK",
 			"CAM_RESET1",
-			"CAM_STANDBY";
+			"CAM_STANDBY",
+			"CAM_VANA",
+			"CAM_VDIG";
+		qcom,gpio-set-tbl-num = <1 1 1 1>;
+		qcom,gpio-set-tbl-flags = <0 2 0 0>;
+		qcom,gpio-set-tbl-delay = <1000 4000 1000 1000>;
 		qcom,sensor-position = <0>;
 		qcom,sensor-mode = <0>;
 		qcom,cci-master = <0>;
@@ -148,14 +174,17 @@
 		pinctrl-1 = <&cam_sensor_mclk1_sleep &cam_sensor_front_sleep>;
 		gpios = <&msm_gpio 27 0>,
 			<&msm_gpio 28 0>,
-			<&msm_gpio 33 0>;
+			<&msm_gpio 33 0>,
+			<&msm_gpio 16 0>;
 		qcom,gpio-reset = <1>;
 		qcom,gpio-standby = <2>;
-		qcom,gpio-req-tbl-num = <0 1 2>;
-		qcom,gpio-req-tbl-flags = <1 0 0>;
+		qcom,gpio-vana = <3>;
+		qcom,gpio-req-tbl-num = <0 1 2 3>;
+		qcom,gpio-req-tbl-flags = <1 0 0 0>;
 		qcom,gpio-req-tbl-label = "CAMIF_MCLK",
 			"CAM_RESET",
-			"CAM_STANDBY";
+			"CAM_STANDBY",
+			"CAM_VANA";
 		qcom,cci-master = <0>;
 		status = "ok";
 		clocks = <&clock_gcc clk_mclk1_clk_src>,

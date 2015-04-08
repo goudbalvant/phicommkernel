@@ -48,11 +48,17 @@ static struct msm_sensor_power_setting gc0310_power_setting[] = {
 		.config_val = 0,
 		.delay = 5,
 	},
-	{
+	/*{
 		.seq_type = SENSOR_VREG,
 		.seq_val = CAM_VANA,
 		.config_val = 0,
 		.delay = 0,
+	},*/
+	{
+		.seq_type = SENSOR_GPIO,
+		.seq_val = SENSOR_GPIO_VANA,
+		.config_val = GPIO_OUT_HIGH,
+		.delay = 5,
 	},
 	{
 		.seq_type = SENSOR_CLK,
@@ -104,7 +110,7 @@ static struct msm_camera_i2c_reg_array gc0310_recommend_setting_list[] = {
 	{0x0f, 0x02},
 	{0x10, 0x88},
 	{0x16, 0x00},
-	{0x17, 0x14},
+	{0x17, 0x17},
 	{0x18, 0x1a},
 	{0x19, 0x14},
 	{0x1b, 0x48},
