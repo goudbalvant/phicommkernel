@@ -1765,7 +1765,7 @@ static int serial_function_bind_config(struct android_usb_function *f,
 					struct usb_configuration *c)
 {
 	char *name, *xport_name = NULL;
-	char buf[32], *b, xport_name_buf[32], *tb;
+	char buf[32], *b, xport_name_buf[32], *tb, *p;
 	int err = -1, i;
 	static int serial_initialized = 0, ports = 0;
 	struct serial_function_config *config = f->config;
@@ -1779,6 +1779,21 @@ static int serial_function_bind_config(struct android_usb_function *f,
 
 	strlcpy(xport_name_buf, serial_xport_names, sizeof(xport_name_buf));
 	tb = strim(xport_name_buf);
+
+    /***************************************************************
+     * Hardcode serial_transports to "smd,tty", which means dun,gps
+     ***************************************************************/
+    ports = 0;
+    p = b;
+    while (*p++) {
+        if (*p == ',') ports++;
+    }
+    ports++;
+    if (1 == ports) {
+        strcat(buf, ",tty");
+    }
+    b = strim(buf);
+    ports = 0;
 
 	while (b) {
 		name = strsep(&b, ",");
@@ -1819,6 +1834,17 @@ static int serial_function_bind_config(struct android_usb_function *f,
 	config->instances_on = ports;
 
 bind_config:
+    memset(buf, 0, 32);
+    strcpy(buf, serial_transports);
+    b = strim(buf);
+    ports = 0;
+    while (b) {
+        name = strsep(&b, ",");
+        if (name) {
+            ports++;
+        }
+    }
+
 	for (i = 0; i < ports; i++) {
 		err = usb_add_function(c, config->f_serial[i]);
 		if (err) {
@@ -2419,13 +2445,13 @@ static int mass_storage_function_init(struct android_usb_function *f,
 	snprintf(name[0], MAX_LUN_NAME, "lun");
 	config->fsg.luns[0].removable = 1;
 
-	if (dev->pdata && dev->pdata->cdrom) {
-		config->fsg.luns[config->fsg.nluns].cdrom = 1;
-		config->fsg.luns[config->fsg.nluns].ro = 1;
-		config->fsg.luns[config->fsg.nluns].removable = 0;
-		snprintf(name[config->fsg.nluns], MAX_LUN_NAME, "rom");
-		config->fsg.nluns++;
-	}
+    if (dev->pdata && dev->pdata->emmc_msc) {
+        config->fsg.luns[config->fsg.nluns].cdrom = 0;
+        config->fsg.luns[config->fsg.nluns].ro = 0;
+        config->fsg.luns[config->fsg.nluns].removable = 1;
+        snprintf(name[config->fsg.nluns], MAX_LUN_NAME, "lun1");
+        config->fsg.nluns++;
+    }
 
 	if (uicc_nluns > FSG_MAX_LUNS - config->fsg.nluns) {
 		uicc_nluns = FSG_MAX_LUNS - config->fsg.nluns;
@@ -2438,6 +2464,14 @@ static int mass_storage_function_init(struct android_usb_function *f,
 		config->fsg.luns[n].removable = 1;
 		config->fsg.nluns++;
 	}
+
+    if (dev->pdata && dev->pdata->cdrom) {
+        config->fsg.luns[config->fsg.nluns].cdrom = 1;
+        config->fsg.luns[config->fsg.nluns].ro = 1;
+        config->fsg.luns[config->fsg.nluns].removable = 0;
+        snprintf(name[config->fsg.nluns], MAX_LUN_NAME, "rom");
+        config->fsg.nluns++;
+    }
 
 	common = fsg_common_init(NULL, cdev, &config->fsg);
 	if (IS_ERR(common)) {
@@ -2597,8 +2631,7 @@ static ssize_t mass_storage_inquiry_store(struct device *dev,
 	struct mass_storage_function_config *config = f->config;
 	if (size >= sizeof(config->common->inquiry_string))
 		return -EINVAL;
-	if (sscanf(buf, "%28s", config->common->inquiry_string) != 1)
-		return -EINVAL;
+    snprintf(config->common->inquiry_string, 28, "%s", buf);
 	return size;
 }
 
@@ -3129,6 +3162,16 @@ functions_store(struct device *pdev, struct device_attribute *attr,
 			conf = alloc_android_config(dev);
 
 		curr_conf = curr_conf->next;
+
+        conf->usb_config.msc_mode = false;
+        conf->usb_config.cdrom_mode = false;
+        if (strstr(conf_str, "mass_storage")) {
+            conf->usb_config.msc_mode = true;
+        }
+        if (strstr(conf_str, "cdrom")) {
+            conf->usb_config.cdrom_mode = true;
+        }
+
 		while (conf_str) {
 			name = strsep(&conf_str, ",");
 			is_ffs = 0;
@@ -3155,6 +3198,10 @@ functions_store(struct device *pdev, struct device_attribute *attr,
 				continue;
 			}
 
+			if (!conf->usb_config.msc_mode &&
+				!strncmp(name, "cdrom", 2)) {
+				name = "mass_storage";
+			}
 			if (!strcmp(name, "rndis") &&
 				!strcmp(strim(rndis_transports), "BAM2BAM_IPA"))
 				name = "rndis_qc";
@@ -3829,6 +3876,8 @@ static int android_probe(struct platform_device *pdev)
 
 		pdata->streaming_func_count = len;
 
+        pdata->emmc_msc = of_property_read_bool(pdev->dev.of_node,
+                "qcom,android-usb-emmc-msc");
 		pdata->cdrom = of_property_read_bool(pdev->dev.of_node,
 			"qcom,android-usb-cdrom");
 		ret = of_property_read_u8(pdev->dev.of_node,

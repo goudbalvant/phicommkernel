@@ -95,7 +95,7 @@ module_param(lpm_disconnect_thresh , uint, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(lpm_disconnect_thresh,
 	"Delay before entering LPM on USB disconnect");
 
-static bool floated_charger_enable;
+static bool floated_charger_enable = true;
 module_param(floated_charger_enable , bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(floated_charger_enable,
 	"Whether to enable floated charger");
@@ -120,6 +120,29 @@ static struct power_supply *psy;
 
 static bool aca_id_turned_on;
 static bool legacy_power_supply;
+
+static int floated_charger_chk_count = 0;
+static bool kpoc_disable_udc = false;
+static bool usb_ftm = false;
+
+static int __init bootmode_setup (char *str)
+{
+    if (!strncmp(str, "charger", 4)) {
+        kpoc_disable_udc = true;
+    }
+    return 1;
+}
+__setup("androidboot.mode=", bootmode_setup);
+
+static int __init usbmode_setup (char *str)
+{
+    if (!strncmp(str, "usb-ftm", 4)) {
+        usb_ftm = true;
+    }
+    return 1;
+}
+__setup("androidboot.usbmode=", usbmode_setup);
+
 static inline bool aca_enabled(void)
 {
 #ifdef CONFIG_USB_MSM_ACA
@@ -3118,6 +3141,10 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 			 * VBUS initial state is reported after PMIC
 			 * driver initialization. Wait for it.
 			 */
+#if 1
+            (void)ret;
+            wait_for_completion(&pmic_vbus_init);
+#else
 			ret = wait_for_completion_timeout(&pmic_vbus_init,
 							  VBUS_INIT_TIMEOUT);
 			if (!ret) {
@@ -3129,6 +3156,7 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 				clear_bit(B_SESS_VLD, &motg->inputs);
 				pmic_vbus_init.done = 1;
 			}
+#endif
 		}
 		break;
 	case USB_HOST:
@@ -3146,6 +3174,10 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 			 * VBUS initial state is reported after PMIC
 			 * driver initialization. Wait for it.
 			 */
+#if 1
+            (void)ret;
+            wait_for_completion(&pmic_vbus_init);
+#else
 			ret = wait_for_completion_timeout(&pmic_vbus_init,
 							  VBUS_INIT_TIMEOUT);
 			if (!ret) {
@@ -3157,6 +3189,7 @@ static void msm_otg_init_sm(struct msm_otg *motg)
 				clear_bit(B_SESS_VLD, &motg->inputs);
 				pmic_vbus_init.done = 1;
 			}
+#endif
 		} else if (pdata->otg_control == OTG_USER_CONTROL) {
 			set_bit(ID, &motg->inputs);
 			set_bit(B_SESS_VLD, &motg->inputs);
@@ -3289,6 +3322,14 @@ static void msm_otg_sm_work(struct work_struct *w)
 					pm_runtime_put_sync(otg->phy->dev);
 					break;
 				case USB_FLOATED_CHARGER:
+                    if (floated_charger_chk_count < 3) {
+                        floated_charger_chk_count++;
+                        motg->chg_state = USB_CHG_STATE_UNDEFINED;
+                        queue_delayed_work(system_nrt_wq, &motg->chg_work,
+                                   msecs_to_jiffies(50));
+                        break;
+                    }
+
 					msm_otg_notify_charger(motg,
 							IDEV_CHG_MAX);
 					msm_otg_dbg_log_event(&motg->phy,
@@ -3321,6 +3362,15 @@ static void msm_otg_sm_work(struct work_struct *w)
 						OTG_STATE_B_PERIPHERAL;
 					break;
 				case USB_SDP_CHARGER:
+                    if (kpoc_disable_udc && !usb_ftm) {
+                        motg->chg_type = USB_FLOATED_CHARGER;
+                        msm_otg_notify_charger(motg,
+                            IDEV_CHG_MIN);
+                        pm_runtime_put_noidle(otg->phy->dev);
+                        pm_runtime_suspend(otg->phy->dev);
+                        break;
+                    }
+
 					msm_otg_start_peripheral(otg, 1);
 					otg->phy->state =
 						OTG_STATE_B_PERIPHERAL;
@@ -3352,6 +3402,8 @@ static void msm_otg_sm_work(struct work_struct *w)
 			msm_otg_dbg_log_event(&motg->phy, "CHG_WORK CANCEL",
 					motg->inputs, otg->phy->state);
 			del_timer_sync(&motg->chg_check_timer);
+            floated_charger_chk_count = 0;
+
 			clear_bit(B_FALSE_SDP, &motg->inputs);
 			clear_bit(A_BUS_REQ, &motg->inputs);
 			cancel_delayed_work_sync(&motg->chg_work);

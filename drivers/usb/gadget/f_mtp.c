@@ -298,7 +298,7 @@ static u8 mtp_os_string[] = {
 	/* Signature field: "MSFT100" */
 	'M', 0, 'S', 0, 'F', 0, 'T', 0, '1', 0, '0', 0, '0', 0,
 	/* vendor code */
-	1,
+	0x42,
 	/* padding */
 	0
 };
@@ -339,6 +339,12 @@ struct {
 	},
 };
 
+struct mtp_ext_config_desc_function pad_function = {
+    .bFirstInterfaceNumber = 1,
+    .bInterfaceCount = 1,
+    .compatibleID = {0},
+};
+
 struct mtp_device_status {
 	__le16	wLength;
 	__le16	wCode;
@@ -357,6 +363,75 @@ struct mtp_data_header {
 
 /* temporary variable used between mtp_open() and mtp_gadget_bind() */
 static struct mtp_dev *_mtp_dev;
+
+static int build_mtp_ext_config_desc(struct usb_composite_dev *cdev)
+{
+    struct usb_configuration *config = NULL;
+    struct usb_function *f;
+    struct usb_descriptor_header **descriptors, *header;
+    struct usb_interface_descriptor *iface;
+    void *buf = cdev->req->buf;
+    void *next = buf + sizeof(mtp_ext_config_desc.header);
+    struct mtp_ext_config_desc_header *h = (struct mtp_ext_config_desc_header *)buf;
+    int interface_count = 0, len = 0, count = 0;
+
+    /* Active configuration? */
+    if (cdev->config) {
+        config = cdev->config;
+        goto found_config;
+    }
+
+    list_for_each_entry(config, &cdev->configs, list) {
+        if (config->bConfigurationValue == 1) {
+            break;
+        }
+    }
+
+found_config:
+    if (NULL == config) {
+        return -EOPNOTSUPP;
+    }
+
+    memcpy(buf, &(mtp_ext_config_desc.header), sizeof(struct mtp_ext_config_desc_header));
+
+    list_for_each_entry(f, &config->functions, list) {
+        descriptors = f->hs_descriptors;
+        if (NULL == descriptors) {
+            descriptors = f->fs_descriptors;
+        }
+
+        if (NULL == descriptors) {
+            descriptors = f->ss_descriptors;
+        }
+
+        if (NULL == descriptors) {
+            continue;
+        }
+
+        for (count = 0; descriptors[count] != NULL; count++) {
+            header = (struct usb_descriptor_header *)descriptors[count];
+            if (header->bDescriptorType == USB_DT_INTERFACE) {
+                iface = (struct usb_interface_descriptor *)descriptors[count];
+                if ((0 == strncmp(f->name, "mtp", 3)) ||
+                    (0 == strncmp(f->name, "ptp", 3))) {
+                    mtp_ext_config_desc.function.bFirstInterfaceNumber = iface->bInterfaceNumber;
+                    memcpy(next, &(mtp_ext_config_desc.function), sizeof(struct mtp_ext_config_desc_function));
+                } else {
+                    pad_function.bFirstInterfaceNumber = iface->bInterfaceNumber;
+                    memcpy(next, &pad_function, sizeof(struct mtp_ext_config_desc_function));
+                }
+                interface_count += 1;
+                next += sizeof(struct mtp_ext_config_desc_function);
+            }
+        }
+    }
+
+    len = next - buf;
+    h->dwLength = cpu_to_le32(len);
+    h->bCount = interface_count;
+
+    return h->dwLength;
+}
 
 static inline struct mtp_dev *func_to_mtp(struct usb_function *f)
 {
@@ -1235,12 +1310,13 @@ static int mtp_ctrlrequest(struct usb_composite_dev *cdev,
 		DBG(cdev, "vendor request: %d index: %d value: %d length: %d\n",
 			ctrl->bRequest, w_index, w_value, w_length);
 
-		if (ctrl->bRequest == 1
+		if (ctrl->bRequest == 0x42
 				&& (ctrl->bRequestType & USB_DIR_IN)
 				&& (w_index == 4 || w_index == 5)) {
-			value = (w_length < sizeof(mtp_ext_config_desc) ?
-					w_length : sizeof(mtp_ext_config_desc));
-			memcpy(cdev->req->buf, &mtp_ext_config_desc, value);
+            value = build_mtp_ext_config_desc(cdev);
+            if (value >= 0) {
+			    value = (w_length < value) ? w_length : value;
+            }
 		}
 	} else if ((ctrl->bRequestType & USB_TYPE_MASK) == USB_TYPE_CLASS) {
 		DBG(cdev, "class request: %d index: %d value: %d length: %d\n",

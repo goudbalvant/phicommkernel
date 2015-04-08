@@ -227,6 +227,8 @@
 #define FSG_DRIVER_VERSION	"2009/09/11"
 
 static const char fsg_string_interface[] = "Mass Storage";
+static int msc_count = 0;
+static int cdrom_count = 0;
 
 #include "storage_common.c"
 
@@ -516,6 +518,7 @@ static int fsg_setup(struct usb_function *f,
 	u16			w_index = le16_to_cpu(ctrl->wIndex);
 	u16			w_value = le16_to_cpu(ctrl->wValue);
 	u16			w_length = le16_to_cpu(ctrl->wLength);
+    u8          nluns = 0;
 
 	if (!fsg_is_set(fsg->common))
 		return -EOPNOTSUPP;
@@ -554,7 +557,15 @@ static int fsg_setup(struct usb_function *f,
 				w_length != 1)
 			return -EDOM;
 		VDBG(fsg, "get max LUN\n");
-		*(u8 *)req->buf = fsg->common->nluns - 1;
+
+        nluns = fsg->common->nluns;
+        if (!f->config->msc_mode) {
+            nluns -= msc_count;
+        }
+        if (!f->config->cdrom_mode) {
+            nluns -= cdrom_count;
+        }
+        *(u8 *)req->buf = nluns-1;
 
 		/* Respond with data/status */
 		req->length = min((u16)1, w_length);
@@ -2293,7 +2304,12 @@ static int received_cbw(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	common->data_size = le32_to_cpu(cbw->DataTransferLength);
 	if (common->data_size == 0)
 		common->data_dir = DATA_DIR_NONE;
-	common->lun = cbw->Lun;
+
+    common->lun = cbw->Lun;
+    if (!fsg->function.config->msc_mode) {
+        common->lun = msc_count + common->lun;
+    }
+
 	if (common->lun < common->nluns)
 		common->curlun = &common->luns[common->lun];
 	else
@@ -2810,7 +2826,11 @@ static int create_lun_device(struct fsg_common *common,
 		/* curlun->dev.driver = &fsg_driver.driver; XXX */
 		dev_set_drvdata(&curlun->dev, &common->filesem);
 		dev_set_name(&curlun->dev, "lun%d", i);
-
+        if (!!lcfg->cdrom) {
+            cdrom_count += 1;
+        } else {
+            msc_count += 1;
+        }
 		rc = device_register(&curlun->dev);
 		if (rc) {
 			pr_err("failed to register LUN%d: %d\n", i, rc);

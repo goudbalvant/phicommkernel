@@ -268,6 +268,8 @@ struct usb_configuration {
 	/* number of in and out eps used in this configuration */
 	int			num_ineps_used;
 	int			num_outeps_used;
+    bool msc_mode;
+    bool cdrom_mode;
 };
 
 int usb_add_config(struct usb_composite_dev *,
