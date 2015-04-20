@@ -301,7 +301,7 @@
 	/delete-property/  bias-pull-up;
 	bias-disable;
 };
-
+/*
 &sdhc_2 {
 	qcom,no-1p8v;
 	qcom,vdd-always-on;
@@ -310,6 +310,19 @@
 	qcom,vdd-current-level = <4000 400000>;
 
 	cd-gpios = <&msm_gpio 38 0x0>;
+};*/
+
+&sdhc_2 {
+    qcom,nonremovable;
+
+    interrupts = <0 1>;
+    interrupt-map = <0 &intc 0 125 0
+        1 &intc 0 221 0>;
+    interrupt-names = "hc_irq", "pwr_irq";
+    /delete-property/ cd-gpios;
+
+    pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
+    pinctrl-1 = <&sdc2_clk_off &sdc2_cmd_off &sdc2_data_off>;
 };
 
 &pm8909_mpps {
