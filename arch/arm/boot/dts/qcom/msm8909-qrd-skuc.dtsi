@@ -19,6 +19,20 @@
 };
 
 &tlmm_pinmux {
+	mpu6050_int_pin {
+		qcom,pins = <&gp 96>;
+		qcom,pin-func = <0>;
+		qcom,num-grp-pins = <1>;
+		label = "mpu6050-irq";
+		mpu6050_default: mpu6050_default {
+			drive-strength = <6>;
+			bias-pull-down;
+		};
+		mpu6050_sleep: mpu6050_sleep {
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
 	ap3426_int_pin {
 		qcom,pins = <&gp 94>;
 		qcom,pin-func = <0>;
@@ -53,7 +67,23 @@
 			bias-pull-up;
 		};
 	};
+
+	akm_reset_pin {	
+		qcom,pins = <&gp 73>;	
+		qcom,pin-func = <0>;
+		qcom,num-grp-pins = <1>;
+		label = "akm_reset_pin";
+		akm_default: akm_default {
+		     	drive-strength = <6>;
+		     	bias-pull-up;
+		   };
+		akm_sleep: akm_sleep {
+		     	drive-strength = <2>;
+		    	bias-pull-down;
+		   };
+       };
 };
+
 
 &soc {
 	i2c@78b9000 { /* BLSP1 QUP5 */
@@ -125,6 +155,9 @@
 				 FF FF FF FF FF FF FF FF 4C 01
                                 ];
 			};
+
+	
+
 		mstar@26{
                         compatible = "msg21XXA";
                         reg = <0x26>;
@@ -196,9 +229,35 @@
 			vdd-supply = <&pm8909_l17>;
 			vio-supply = <&pm8909_l6>;
 			taos,gpio-int1 = <&msm_gpio 94 0x2002>;
-	};
+		};
+	mpu6050@68 { /* Gyroscope and accelerometer sensor combo */
+		compatible = "invn,mpu6050";
+		reg = <0x68>;
+		pinctrl-names = "mpu_default","mpu_sleep";
+		pinctrl-0 = <&mpu6050_default>;
+		pinctrl-1 = <&mpu6050_sleep>;
+		interrupt-parent = <&msm_gpio>;
+		interrupts = <96 0x1>;
+		vdd-supply = <&pm8909_l17>;
+		vlogic-supply = <&pm8909_l6>;
+		invn,gpio-int = <&msm_gpio 96 0x1>;
+		invn,place = "Portrait Down Back Side";
 	};
 
+	akm@c {	
+		      	compatible = "ak,ak09911";	
+		      	reg = <0x0c>;
+		      	pinctrl-names = "default","sleep";	
+		      	pinctrl-0 = <&akm_default>;	
+		     	pinctrl-1 = <&akm_sleep>;	
+		     	vdd-supply = <&pm8909_l17>;	
+		     	vio-supply = <&pm8909_l6>;
+		      	akm,layout = <0x3>;
+		      	akm,gpio_rstn = <&msm_gpio 73 0x0>;
+		     	akm,auto-report;
+	     		 };
+	};
+			
 	gen-vkeys {
 		compatible = "qcom,gen-vkeys";
 		label = "ft5x06_ts";
