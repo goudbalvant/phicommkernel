@@ -66,7 +66,7 @@ struct akm_sensor_state {
 	bool power_on;
 	uint8_t mode;
 };
-
+static u32 temp_val = 7;
 struct akm_compass_data {
 	struct i2c_client	*i2c;
 	struct input_dev	*input;
@@ -1721,10 +1721,47 @@ reg_vdd_put:
 }
 
 #ifdef CONFIG_OF
+static ssize_t akm_layout_show(struct device *dev,
+                struct device_attribute *attr, char *buf)
+{
+
+        return snprintf(buf, 4, "%d\n", temp_val);
+
+}
+
+
+static ssize_t akm_layout_store(struct device *dev,
+                struct device_attribute *attr,
+                const char *buf, size_t count)
+{
+        unsigned long data;
+        int error;
+
+        error = kstrtoul(buf, 10, &data);
+	temp_val=data;
+        return count;
+}
+
+
+
+static DEVICE_ATTR(layout, S_IRUGO|S_IWUSR|S_IWGRP|S_IWOTH,
+                akm_layout_show, akm_layout_store);
+
+static struct attribute *akm_attributes[] = {
+        &dev_attr_layout.attr,
+	NULL
+};
+
+static struct attribute_group akm09911_attribute_group = {
+        .attrs = akm_attributes
+};
+
+
 static int akm_compass_parse_dt(struct device *dev,
 				struct akm_compass_data *akm)
 {
 	struct device_node *np = dev->of_node;
+/*
 	u32 temp_val;
 	int rc;
 
@@ -1735,7 +1772,8 @@ static int akm_compass_parse_dt(struct device *dev,
 	} else {
 		akm->layout = temp_val;
 	}
-
+*/
+	akm->layout = temp_val;
 	akm->auto_report = of_property_read_bool(np, "akm,auto-report");
 	akm->use_hrtimer = of_property_read_bool(np, "akm,use-hrtimer");
 	akm->gpio_rstn = of_get_named_gpio_flags(dev->of_node,
@@ -1824,7 +1862,7 @@ static int akm_report_data(struct akm_compass_data *akm)
 	dev_dbg(&akm->i2c->dev, "asa: %d %d %d\n", akm->sense_conf[0],
 			akm->sense_conf[1], akm->sense_conf[2]);
 
-	switch (akm->layout) {
+	switch (temp_val) {
 	case 0:
 	case 1:
 		/* Fall into the default direction */
@@ -2266,7 +2304,13 @@ int akm_compass_probe(struct i2c_client *client, const struct i2c_device_id *id)
 			"%s: create sysfs failed.", __func__);
 		goto exit7;
 	}
-
+	err = sysfs_create_group(&s_akm->input->dev.kobj,
+                        &akm09911_attribute_group);
+        if (err < 0) {
+                dev_err(&client->dev,
+                        "Cannot create sysfs layout for akm09911\n");
+                goto exit7;
+        }
 	s_akm->cdev = sensors_cdev;
 	s_akm->cdev.sensors_enable = akm_enable_set;
 	s_akm->cdev.sensors_poll_delay = akm_poll_delay_set;
