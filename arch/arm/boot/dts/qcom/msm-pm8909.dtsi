@@ -537,8 +537,7 @@
 						   "cdc-vdd-pa",
 						   "cdc-vdda-cp";
 
-			qcom,cdc-on-demand-supplies = "cdc-vdd-mic-bias",
-						      "cdc-vdd-spkdrv";
+			qcom,cdc-on-demand-supplies = "cdc-vdd-mic-bias";
 			qcom,ext-spk-amp-gpio = <&msm_gpio 98 0x0>;
 		};
 
