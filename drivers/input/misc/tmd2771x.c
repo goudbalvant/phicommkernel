@@ -1394,6 +1394,9 @@ static int tmd2771x_parse_dt(struct i2c_client *client, struct tmd2771x_platform
 	#elif defined (CONFIG_PHICOMM_BOARD_C520Lw)
 	pdata->ps_det_thld = 15;
 	pdata->ps_hsyt_thld = 5;
+	#elif defined (CONFIG_PHICOMM_BOARD_E653Lw)
+	pdata->ps_det_thld = 110;
+	pdata->ps_hsyt_thld = 50;
 	#else
 	pdata->ps_det_thld = 300;
 	pdata->ps_hsyt_thld = 200;
@@ -1560,7 +1563,7 @@ static void read_caldata(struct work_struct *work)
     int thld = 0;
     static int caldata_read_time = 0;
 
-    read_file("/system/tmd_cal.txt", pdata_temp, 4);
+    read_file("/persist/tmd_cal.txt", pdata_temp, 4);
 
     if(strlen(pdata_temp) > 0)
     {
@@ -1597,7 +1600,7 @@ static void save_tmd_caldata(struct work_struct *work)
     int pdata_temp = 0;
     int n = 0;
 
-    write_file("/system/tmd_cal.txt", temp, 20);
+    write_file("/persist/tmd_cal.txt", temp, 20);
 
     pdata_max = 0;
     pdata_min = 0;
@@ -1620,7 +1623,7 @@ static void save_tmd_caldata(struct work_struct *work)
     	
     	n = sprintf(temp, "%d", pdata_temp);
 
-    	write_file("/system/tmd_cal.txt", temp, n);
+    	write_file("/persist/tmd_cal.txt", temp, n);
     }   
     for(i = 0; i < 10 ; i++)
     {
@@ -1710,15 +1713,14 @@ static int  tmd2771x_probe(struct i2c_client *client,
 	struct input_dev *input_dev;
 	struct input_dev *input_dev_light;
 
-
-        tmdcal_proc_entry = proc_create("tmd_cal", 0666, NULL,&tmdcal_proc_fops);
+	tmdcal_proc_entry = proc_create("tmd_cal", 0666, NULL,&tmdcal_proc_fops);
 	if(tmdcal_proc_entry == NULL){
 	
 		printk(KERN_INFO "fdv proc file create failed!\n");
 	}
 	INIT_DELAYED_WORK(&caldata_read_dwork, read_caldata);
        
-//	schedule_delayed_work(&caldata_read_dwork, 30 * HZ);	// restart timer
+	schedule_delayed_work(&caldata_read_dwork, 30 * HZ);	// restart timer
 	//init_timer(&readcal_timer);
 	//
 	//readcal_timer.function = caldata_read_timer;
