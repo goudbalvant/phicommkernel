@@ -1056,4 +1056,12 @@ config PHICOMM_BOARD_E653Lw
     help
       E653Lw project macro define
 
+#yaming.chen, DATE20150515, NOTE, DATE20150515-01 START
+config PHICOMM_BOARD_C630Lw                                                           
+    bool "C630Lw project config file"
+    default n
+    help
+      C630Lw project macro define
+#yaming.chen, DATE20150515-01 END
+
 endif

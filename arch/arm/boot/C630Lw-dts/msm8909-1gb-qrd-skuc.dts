@@ -13,8 +13,10 @@
 /dts-v1/;
 
 #include "msm8909-qrd-skuc.dtsi"
-#include "e653lw-dsi-panel-booyi-t50ka45s3m-otm1287a-720p-video.dtsi"
-#include "e653lw-dsi-panel-feixun-fx5022ao-otm1284a-720p-video.dtsi"
+#include "c630lw-dsi-panel-booyi-t50mp17t9m_fl10802_50_fwvga-video.dtsi"
+#include "c630lw-dsi-panel-feixun-fx5024tf-fl10802-50-fwvga-video.dtsi"
+#include "c630lw-dsi-panel-junda-jd500002b1-hx8379c-50-fwvga-video.dtsi"
+
 
 / {
 	qcom,board-id= <0x1000b 0x8>, <0x11000b 0x8>, <0x21000b 0x8>;
@@ -24,11 +26,15 @@
 	qcom,mdss-pref-prim-intf = "dsi";
 };
 
-&dsi_booyi_t50ka45s3m_otm1287a_720p_video {
+&dsi_booyi_t50mp17t9m_fl10802_fwvga_video {
 	qcom,cont-splash-enabled;
 };
 
-&dsi_feixun_fx5022ao_otm1284a_720p_video {
+&dsi_feixun_fx5024tf_fl10802_fwvga_video {
+	qcom,cont-splash-enabled;
+};
+
+&dsi_junda_jd500002b1_hx8379c_fwvga_video {
 	qcom,cont-splash-enabled;
 };
 
@@ -43,7 +49,7 @@
 };
 
 &mdss_dsi0 {
-	qcom,dsi-pref-prim-pan = <&dsi_booyi_t50ka45s3m_otm1287a_720p_video>;
+	qcom,dsi-pref-prim-pan = <&dsi_booyi_t50mp17t9m_fl10802_fwvga_video>;
 	pinctrl-names = "mdss_default", "mdss_sleep";
 	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
 	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend>;
