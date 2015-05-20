@@ -345,7 +345,10 @@
 		qcom,rpull-up-kohm = <0>;
 		qcom,vref-batt-therm = <1800000>;
 
-		#include "batterydata-qrd-skuc-4v2-2000mah.dtsi"
+		//#include "batterydata-qrd-skuc-4v2-2000mah.dtsi"
+		#include "batterydata-veken-4v35-2300mah.dtsi"
+
+
 	};
 };
 

@@ -201,19 +201,19 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			qcom,vddmax-mv = <4200>;
-			qcom,vddsafe-mv = <4200>;
+			qcom,vddmax-mv = <4350>;
+			qcom,vddsafe-mv = <4350>;
 			qcom,vinmin-mv = <4308>;
 			qcom,ibatsafe-ma = <1440>;
-			qcom,thermal-mitigation = <1440 720 630 0>;
+			qcom,thermal-mitigation = <1080 720 630 0>;
 			qcom,cool-bat-decidegc = <100>;
 			qcom,warm-bat-decidegc = <450>;
-			qcom,cool-bat-mv = <4100>;
-			qcom,warm-bat-mv = <4100>;
+			qcom,cool-bat-mv = <4200>;
+			qcom,warm-bat-mv = <4200>;
 			qcom,ibatmax-warm-ma = <360>;
 			qcom,ibatmax-cool-ma = <360>;
-			qcom,batt-hot-percentage = <25>;
-			qcom,batt-cold-percentage = <80>;
+			qcom,batt-hot-percentage = <35>;
+			qcom,batt-cold-percentage = <70>;
 			qcom,tchg-mins = <232>;
 			qcom,chg-vadc = <&pm8909_vadc>;
 			qcom,chg-adc_tm = <&pm8909_adc_tm>;
@@ -273,7 +273,7 @@
 			status = "disabled";
 
 			qcom,v-cutoff-uv = <3400000>;
-			qcom,max-voltage-uv = <4200000>;
+			qcom,max-voltage-uv = <4350000>;
 			qcom,r-conn-mohm = <0>;
 			qcom,shutdown-soc-valid-limit = <100>;
 			qcom,low-soc-calculate-soc-threshold = <15>;
