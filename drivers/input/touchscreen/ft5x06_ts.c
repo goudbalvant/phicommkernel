@@ -31,6 +31,7 @@
 #include <linux/debugfs.h>
 #include <linux/sensors.h>
 #include <linux/input/ft5x06_ts.h>
+#include <linux/proc_fs.h>
 
 #if defined(CONFIG_FB)
 #include <linux/notifier.h>
@@ -41,6 +42,8 @@
 /* Early-suspend level */
 #define FT_SUSPEND_LEVEL 1
 #endif
+
+#define TPD_AUTO_UPGRADE
 
 #define FT_DRIVER_VERSION	0x02
 
@@ -270,7 +273,8 @@ struct ft5x06_ts_data {
 
 static int ft5x06_ts_start(struct device *dev);
 static int ft5x06_ts_stop(struct device *dev);
-
+static char fw_version[10];
+#define CTP_AUTHORITY 0777
 static struct sensors_classdev __maybe_unused sensors_proximity_cdev = {
 	.name = "ft5x06-proximity",
 	.vendor = "FocalTech",
@@ -682,6 +686,8 @@ static void ft5x06_update_fw_ver(struct ft5x06_ts_data *data)
 
 	dev_info(&client->dev, "Firmware version = %d.%d.%d\n",
 		data->fw_ver[0], data->fw_ver[1], data->fw_ver[2]);
+	sprintf(fw_version, "%d.%d.%d",data->fw_ver[0], data->fw_ver[1], data->fw_ver[2] );
+	printk("wangtao the fw_version is %s\n",fw_version);
 }
 
 static irqreturn_t ft5x06_ts_interrupt(int irq, void *dev_id)
@@ -1569,6 +1575,93 @@ static int ft5x06_fw_upgrade_start(struct i2c_client *client,
 	return 0;
 }
 
+#if defined TPD_AUTO_UPGRADE
+static unsigned char CTPM_FW[]=
+{
+#include "FT6x36_4Columns_Ver0x02_20150510_app.i"
+};
+
+int fts_ctpm_fw_upgrade_with_i_file(struct ft5x06_ts_data *data)
+{
+    struct i2c_client *client = data->client;
+    //int  flag_TPID=0;
+    u8*     pbt_buf = 0x0;
+    int rc = 0,fw_len = 0;
+    u8 uc_host_fm_ver,uc_tp_fm_ver,vendor_id;
+    u8 reg_addr;
+
+    //=========FW upgrade========================*/
+
+    if (sizeof(CTPM_FW) < 8 || sizeof(CTPM_FW) > 32 * 1024)
+    {
+        printk("FW length error\n");
+        return -1;
+    }
+
+	reg_addr = 0xA6;
+	ft5x06_i2c_read(client, &reg_addr, 1, &uc_tp_fm_ver, 1);
+	reg_addr = 0xA8;
+	ft5x06_i2c_read(client, &reg_addr, 1, &vendor_id, 1);
+//	reg_addr = 0xA3;
+//	ft5x06_i2c_read(client, &reg_addr, 1, &ic_type, 1);
+
+	if(1)//oufei
+	{
+		pbt_buf = CTPM_FW;
+		fw_len = sizeof(CTPM_FW);
+		printk("update firmware size:%d\n", fw_len);
+	}
+	else if(vendor_id == 0x3b)
+	{
+	#if 0
+		pbt_buf = CTPM_FW2;
+		fw_len = sizeof(CTPM_FW2);
+		printk("update firmware size:%d", fw_len);
+	#endif
+		return -1;
+	}
+	else
+	{
+		printk("read vendor_id fail");
+		return -1;
+	}
+
+    if (((pbt_buf[fw_len - 8] ^ pbt_buf[fw_len - 6]) == 0xFF
+        && (pbt_buf[fw_len - 7] ^ pbt_buf[fw_len - 5]) == 0xFF
+        && (pbt_buf[fw_len - 3] ^ pbt_buf[fw_len - 4]) == 0xFF) ||
+         (((pbt_buf[0x104] ^ pbt_buf[0x105]) == 0xFF
+        && (pbt_buf[0x106] ^ pbt_buf[0x107]) == 0xFF)))
+    {
+        /*
+		if(vendor_id != pbt_buf[0x108])
+		{
+			printk("vendor_id dismatch, ic:%x, file:%x", vendor_id, pbt_buf[0x108]);
+			return -1;
+		}
+        */
+        uc_host_fm_ver = pbt_buf[0x10a];
+        printk("[FTS] uc_tp_fm_ver = %d.\n", uc_tp_fm_ver);
+        printk("[FTS] uc_host_fm_ver = %d.\n", uc_host_fm_ver);
+
+        if((uc_tp_fm_ver < uc_host_fm_ver))
+        {
+            rc = ft5x06_fw_upgrade_start(data->client, pbt_buf, fw_len);
+            if (rc != 0)
+            {
+                printk("[FTS]  upgrade failed rc = %d.\n", rc);
+            }
+            else
+            {
+                printk("[FTS] upgrade successfully.\n");
+            }
+        }
+    }
+
+    return rc;
+}
+#endif
+
+
 static int ft5x06_fw_upgrade(struct device *dev, bool force)
 {
 	struct ft5x06_ts_data *data = dev_get_drvdata(dev);
@@ -1645,6 +1738,43 @@ rel_fw:
 	release_firmware(fw);
 	return rc;
 }
+
+static ssize_t ft_5x06_version_read_proc(struct file *file, char __user *page, size_t size, loff_t *ppos)
+{
+	char *ptr=page;
+	if (*ppos){
+		return 0;
+	}
+	printk("fw_version:%s\n",fw_version);
+	ptr +=sprintf(ptr, "%s\n", fw_version);
+	*ppos += ptr - page;
+	return (ptr-page);
+}
+
+#define CTP_AUTHORITY_PROC 0777
+static void ft_5x06_create_file_for_fwUpdate_proc(void)
+{
+	struct proc_dir_entry *ft_5x06_class_proc = NULL;
+	struct proc_dir_entry *ft_5x06_ft_5x06_proc = NULL;
+	struct proc_dir_entry *ft_5x06_device_proc = NULL;
+	struct proc_dir_entry *ft_5x06_version_proc = NULL;
+
+	static const struct file_operations ft_5x06_device_fops = {
+		.owner  = THIS_MODULE,
+		.read   = ft_5x06_version_read_proc,
+		//.write  = proc_version_write,
+	};
+
+	ft_5x06_class_proc = proc_mkdir("class", NULL);
+	ft_5x06_ft_5x06_proc = proc_mkdir("ms-touchscreen-ft_5x06",ft_5x06_class_proc);
+	ft_5x06_device_proc = proc_mkdir("device",ft_5x06_ft_5x06_proc);
+
+	ft_5x06_version_proc = proc_create("version", CTP_AUTHORITY_PROC, ft_5x06_device_proc,&ft_5x06_device_fops);
+	if (ft_5x06_version_proc == NULL) {
+		printk("create_proc_entry ft_5x06_version_proc failed\n");
+	}
+}
+
 
 static ssize_t ft5x06_update_fw_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -2095,6 +2225,12 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	u8 reg_addr;
 	int err, len;
 
+#if defined TPD_AUTO_UPGRADE
+    int ret_auto_upgrade = 0;
+    int i;
+#endif
+
+
 	if (client->dev.of_node) {
 		pdata = devm_kzalloc(&client->dev,
 			sizeof(struct ft5x06_ts_platform_data), GFP_KERNEL);
@@ -2437,6 +2573,23 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 
 	dev_dbg(&client->dev, "touch threshold = %d\n", reg_value * 4);
 
+    #if defined TPD_AUTO_UPGRADE
+    {
+        printk("********************Enter CTP Auto Upgrade********************\n");
+        msleep(50);
+        i = 0;
+        do
+        {
+            ret_auto_upgrade = fts_ctpm_fw_upgrade_with_i_file(data);
+            i++;
+            if(ret_auto_upgrade < 0)
+            {
+                printk(" ctp upgrade fail err = %d \n",ret_auto_upgrade);
+            }
+        }
+        while((ret_auto_upgrade < 0)&&(i<3));
+    }
+#endif
 	ft5x06_update_fw_ver(data);
 	ft5x06_update_fw_vendor_id(data);
 
@@ -2461,6 +2614,7 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	data->early_suspend.resume = ft5x06_ts_late_resume;
 	register_early_suspend(&data->early_suspend);
 #endif
+ ft_5x06_create_file_for_fwUpdate_proc();
 
 	return 0;
 
