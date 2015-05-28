@@ -76,8 +76,9 @@ u8 config[GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH]
     static const u16 touch_key_array[] = GTP_KEY_TAB;
     #define GTP_MAX_KEY_NUM  (sizeof(touch_key_array)/sizeof(touch_key_array[0]))
     
-#if GTP_DEBUG_ON
     static const int  key_codes[] = {KEY_HOMEPAGE, KEY_BACK, KEY_MENU, KEY_SEARCH};
+#if (GTP_DEBUG_ON!=1)
+    static const char *key_names[] = {"Key_Home", "Key_Back", "Key_Menu", "Key_Search"};
 #endif
     
 #endif
@@ -857,6 +858,18 @@ static void goodix_ts_work_func(struct work_struct *work)
                     {
                         break;
                     }
+                }
+            #else
+                if(key_value & (0x01 << i))
+                {
+                  for (ret = 0; ret < 4; ++ret)
+                  {
+                      if (key_codes[ret] == touch_key_array[i])
+                      {
+                        printk("<<-GTP-DEBUG->> Key: %s Down\n",  key_names[ret]);
+                        break;
+                      }
+                  }
                 }
             #endif
                 input_report_key(ts->input_dev, touch_key_array[i], key_value & (0x01<<i));   
