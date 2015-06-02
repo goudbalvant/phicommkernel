@@ -12,7 +12,7 @@
 
 &mdss_mdp {
 	dsi_booyi_t50ka45s3m_otm1287a_720p_video: qcom,mdss_dsi_booyi_t50ka45s3m_otm1287a_720p_video {
-		qcom,mdss-dsi-panel-name = "otm1287a 720p video mode dsi panel";
+		qcom,mdss-dsi-panel-name = "booyi t50ka45s3m otm1287a 720p video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 		qcom,mdss-dsi-panel-destination = "display_1";
@@ -73,7 +73,7 @@
 			29 01 00 00 00 00 03 d8 94 94          //94=4.396
 
 			29 01 00 00 00 00 02 00 00 		//VCOM=-0.240V
-			29 01 00 00 00 00 02 d9 6c             //0d
+			29 01 00 00 00 00 02 d9 44             //0d
 
 			29 01 00 00 00 00 02 00 b3             //VDD_18V=1.7V, LVDSVDD=1.6V
 			29 01 00 00 00 00 02 c5 84
