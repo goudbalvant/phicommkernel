@@ -63,7 +63,8 @@
 static unsigned int GTP_RST_PORT=12;
 
 static unsigned int GTP_INT_PORT=13;
-
+static char fw_version[10];
+#define CTP_AUTHORITY 0777
 #define GTP_INT_IRQ     gpio_to_irq(GTP_INT_PORT)
 
 static const char *goodix_ts_name = "goodix-ts";
@@ -487,7 +488,7 @@ static void gtp_pen_init(struct goodix_ts_data *ts)
     ts->pen_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS) ;
     
 #if GTP_ICS_SLOT_REPORT
-    //input_mt_init_slots(ts->pen_dev, 16);               // 
+    input_mt_init_slots(ts->pen_dev, 16);               // 
 #else
     ts->pen_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
 #endif
@@ -1769,10 +1770,13 @@ s32 gtp_read_version(struct i2c_client *client, u16* version)
     if (buf[5] == 0x00)
     {
         GTP_INFO("IC Version: %c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[7], buf[6]);
+        sprintf(fw_version, "%c%c%c_%X%X", buf[2], buf[3], buf[4], buf[7], buf[6]);
     }
     else
     {
         GTP_INFO("IC Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
+        sprintf(fw_version, "%c%c%c%c_%X%X", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
+        printk("fw_version%s\n",fw_version);
     }
     return ret;
 }
@@ -1786,6 +1790,41 @@ Output:
     Executive outcomes.
         2: succeed, otherwise failed.
 *******************************************************/
+static ssize_t gt91xx_version_read_proc(struct file *file, char __user *page, size_t size, loff_t *ppos)
+{
+    char *ptr=page;
+     if (*ppos){
+        return 0;
+    }
+    printk("fw_version:%s\n",fw_version);
+    ptr +=sprintf(ptr, "%s\n", fw_version);
+    *ppos += ptr - page;
+    return (ptr-page);
+}
+#define CTP_AUTHORITY_PROC 0777
+static void _gt9xx_create_file_for_fwUpdate_proc(void)
+{
+    struct proc_dir_entry *gt9xx_class_proc = NULL;
+    struct proc_dir_entry *gt9xx_gt9xx_proc = NULL;
+    struct proc_dir_entry *gt9xx_device_proc = NULL;
+    struct proc_dir_entry *gt9xx_version_proc = NULL;
+
+    static const struct file_operations gt9xx_device_fops = {
+        .owner  = THIS_MODULE,
+        .read   = gt91xx_version_read_proc,
+        //.write  = proc_version_write,
+    };
+
+    gt9xx_class_proc = proc_mkdir("class", NULL);
+    gt9xx_gt9xx_proc = proc_mkdir("ms-touchscreen-gt9xx",gt9xx_class_proc);
+    gt9xx_device_proc = proc_mkdir("device",gt9xx_gt9xx_proc);
+
+    gt9xx_version_proc = proc_create("version", CTP_AUTHORITY_PROC, gt9xx_device_proc,&gt9xx_device_fops);
+    if (gt9xx_version_proc == NULL) {
+        GTP_DEBUG("create_proc_entry gt9xx_version_proc failed\n");
+    }
+}
+
 static s8 gtp_i2c_test(struct i2c_client *client)
 {
     u8 test[3] = {GTP_REG_CONFIG_DATA >> 8, GTP_REG_CONFIG_DATA & 0xff};
@@ -1922,7 +1961,7 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
 
     ts->input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS) ;
 #if GTP_ICS_SLOT_REPORT
-    input_mt_init_slots(ts->input_dev, 16,0);     // in case of "out of memory"
+    input_mt_init_slots(ts->input_dev, 16);     // in case of "out of memory"
 #else
     ts->input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
 #endif
@@ -2941,7 +2980,7 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
         GTP_ERROR("Read version failed.");
 		goto exit_free_irq;
 	}
-
+    _gt9xx_create_file_for_fwUpdate_proc();
     if (ts->use_irq)
     {
         gtp_irq_enable(ts);
