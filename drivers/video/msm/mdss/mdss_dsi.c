@@ -10,6 +10,14 @@
  * GNU General Public License for more details.
  *
  */
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ *
+ */
 
 #include <linux/module.h>
 #include <linux/interrupt.h>
@@ -1804,6 +1812,29 @@ int dsi_panel_device_register(struct device_node *pan_node,
 	 * If disp_en_gpio has been set previously (disp_en_gpio > 0)
 	 *  while parsing the panel node, then do not override it
 	 */
+
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+	if (ctrl_pdata->disp_enp_gpio <= 0) {
+		ctrl_pdata->disp_enp_gpio = of_get_named_gpio(
+			ctrl_pdev->dev.of_node,
+			"qcom,platform-positive-enable-gpio", 0);
+
+		if (!gpio_is_valid(ctrl_pdata->disp_enp_gpio))
+			pr_err("%s:%d, Disp_enp gpio not specified\n",
+					__func__, __LINE__);
+	}
+
+	if (ctrl_pdata->disp_enn_gpio <= 0) {
+		ctrl_pdata->disp_enn_gpio = of_get_named_gpio(
+			ctrl_pdev->dev.of_node,
+			"qcom,platform-negetive-enable-gpio", 0);
+
+		if (!gpio_is_valid(ctrl_pdata->disp_enn_gpio))
+			pr_err("%s:%d, Disp_enn gpio not specified\n",
+					__func__, __LINE__);
+	}
+       #else
 	if (ctrl_pdata->disp_en_gpio <= 0) {
 		ctrl_pdata->disp_en_gpio = of_get_named_gpio(
 			ctrl_pdev->dev.of_node,
@@ -1813,6 +1844,8 @@ int dsi_panel_device_register(struct device_node *pan_node,
 			pr_err("%s:%d, Disp_en gpio not specified\n",
 					__func__, __LINE__);
 	}
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 
 	ctrl_pdata->disp_te_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
 		"qcom,platform-te-gpio", 0);

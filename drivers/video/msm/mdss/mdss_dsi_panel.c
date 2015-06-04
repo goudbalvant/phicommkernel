@@ -9,7 +9,15 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ *
+ */
+ 
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/of.h>
@@ -208,6 +216,27 @@ static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	int rc = 0;
 
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+	if (gpio_is_valid(ctrl_pdata->disp_enp_gpio)) {
+		rc = gpio_request(ctrl_pdata->disp_enp_gpio, "disp_positive_enable");
+		if (rc) {
+			printk("E653: ctrl_pdata->disp_enp_gpio %d failed\n" ,ctrl_pdata->disp_enp_gpio);
+			goto disp_enp_gpio_err;
+		}
+		else
+			printk("E653: ctrl_pdata->disp_enp_gpio %d requested done\n" ,ctrl_pdata->disp_enp_gpio);
+	}
+	if (gpio_is_valid(ctrl_pdata->disp_enn_gpio)) {
+		rc = gpio_request(ctrl_pdata->disp_enn_gpio, "disp_negetive_enable");
+		if (rc) {
+			printk("E653: ctrl_pdata->disp_enn_gpio %d failed\n" ,ctrl_pdata->disp_enn_gpio);
+			goto disp_enn_gpio_err;
+		}
+		else
+			printk("E653: ctrl_pdata->disp_enn_gpio %d requested done\n" ,ctrl_pdata->disp_enn_gpio);
+	}
+       #else
 	if (gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
 		rc = gpio_request(ctrl_pdata->disp_en_gpio,
 						"disp_enable");
@@ -217,6 +246,8 @@ static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 			goto disp_en_gpio_err;
 		}
 	}
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 	rc = gpio_request(ctrl_pdata->rst_gpio, "disp_rst_n");
 	if (rc) {
 		pr_err("request reset gpio failed, rc=%d\n",
@@ -248,9 +279,20 @@ mode_gpio_err:
 bklt_en_gpio_err:
 	gpio_free(ctrl_pdata->rst_gpio);
 rst_gpio_err:
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+	if (gpio_is_valid(ctrl_pdata->disp_enn_gpio))
+		gpio_free(ctrl_pdata->disp_enn_gpio);
+disp_enn_gpio_err:
+	if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
+		gpio_free(ctrl_pdata->disp_enp_gpio);
+disp_enp_gpio_err:
+	#else
 	if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 		gpio_free(ctrl_pdata->disp_en_gpio);
 disp_en_gpio_err:
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 	return rc;
 }
 
@@ -268,10 +310,28 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
 
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+	if (!gpio_is_valid(ctrl_pdata->disp_enp_gpio)) {
+		pr_debug("%s:%d, enp line not configured\n",
+			   __func__, __LINE__);
+	}
+	else
+		pr_err("E653: enp line is %d\n", ctrl_pdata->disp_enp_gpio);
+
+	if (!gpio_is_valid(ctrl_pdata->disp_enn_gpio)) {
+		pr_debug("%s:%d, enn line not configured\n",
+			   __func__, __LINE__);
+	}
+	else
+		pr_err("E653: enn line is %d\n", ctrl_pdata->disp_enp_gpio);
+       #else
 	if (!gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
 		pr_debug("%s:%d, reset line not configured\n",
 			   __func__, __LINE__);
 	}
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 
 	if (!gpio_is_valid(ctrl_pdata->rst_gpio)) {
 		pr_debug("%s:%d, reset line not configured\n",
@@ -289,8 +349,21 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			return rc;
 		}
 		if (!pinfo->cont_splash_enabled) {
+			printk("E653: enable LCM external power supply\n");
+			// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+			#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+			if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
+				gpio_set_value((ctrl_pdata->disp_enp_gpio), 1);
+			mdelay(5);
+
+			if (gpio_is_valid(ctrl_pdata->disp_enn_gpio))
+				gpio_set_value((ctrl_pdata->disp_enn_gpio), 1);
+			mdelay(5);
+			#else
 			if (gpio_is_valid(ctrl_pdata->disp_en_gpio))
 				gpio_set_value((ctrl_pdata->disp_en_gpio), 1);
+			#endif
+			// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 
 			for (i = 0; i < pdata->panel_info.rst_seq_len; ++i) {
 				gpio_set_value((ctrl_pdata->rst_gpio),
@@ -320,12 +393,32 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			gpio_set_value((ctrl_pdata->bklt_en_gpio), 0);
 			gpio_free(ctrl_pdata->bklt_en_gpio);
 		}
+
+		// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+		#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+		printk("E653: disable LCM external power supply\n");
+		if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
+			gpio_set_value((ctrl_pdata->disp_enp_gpio), 0);
+		mdelay(5);
+
+		if (gpio_is_valid(ctrl_pdata->disp_enn_gpio))
+			gpio_set_value((ctrl_pdata->disp_enn_gpio), 0);
+		mdelay(5);
+		gpio_set_value((ctrl_pdata->rst_gpio), 0);
+		gpio_free(ctrl_pdata->rst_gpio);
+		if (gpio_is_valid(ctrl_pdata->disp_enn_gpio))
+			gpio_free(ctrl_pdata->disp_enn_gpio);
+		if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
+			gpio_free(ctrl_pdata->disp_enp_gpio);
+		#else
 		if (gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
 			gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 			gpio_free(ctrl_pdata->disp_en_gpio);
 		}
 		gpio_set_value((ctrl_pdata->rst_gpio), 0);
 		gpio_free(ctrl_pdata->rst_gpio);
+		#endif
+		// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 		if (gpio_is_valid(ctrl_pdata->mode_gpio))
 			gpio_free(ctrl_pdata->mode_gpio);
 	}
@@ -1158,6 +1251,8 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 		pinfo->esd_check_enabled = false;
 	}
 
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifndef CONFIG_PHICOMM_BOARD_E653Lw
 	if (ctrl->disp_en_gpio <= 0) {
 		ctrl->disp_en_gpio = of_get_named_gpio(
 			np,
@@ -1167,6 +1262,8 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 			pr_err("%s:%d, Disp_en gpio not specified\n",
 					__func__, __LINE__);
 	}
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 
 	return 0;
 }

@@ -9,6 +9,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ *
+ */
 
 /dts-v1/;
 
@@ -48,5 +56,9 @@
 	pinctrl-0 = <&mdss_dsi_active &mdss_te_active>;
 	pinctrl-1 = <&mdss_dsi_suspend &mdss_te_suspend>;
 
+       // FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+       qcom,platform-positive-enable-gpio = <&msm_gpio 23 0>;
+       qcom,platform-negetive-enable-gpio = <&msm_gpio 22 0>;
+       // FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 	qcom,platform-reset-gpio = <&msm_gpio 25 0>;
 };

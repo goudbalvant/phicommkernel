@@ -10,6 +10,14 @@
  * GNU General Public License for more details.
  *
  */
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ *
+ */
 
 #ifndef MDSS_DSI_H
 #define MDSS_DSI_H
@@ -328,7 +336,14 @@ struct mdss_dsi_ctrl_pdata {
 	int irq_cnt;
 	int disp_te_gpio;
 	int rst_gpio;
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
+	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
+	int disp_enp_gpio;
+	int disp_enn_gpio;
+	#else
 	int disp_en_gpio;
+	#endif
+	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 END
 	int bklt_en_gpio;
 	int mode_gpio;
 	int bklt_ctrl;	/* backlight ctrl */
