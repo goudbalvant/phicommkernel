@@ -221,20 +221,20 @@ static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 	if (gpio_is_valid(ctrl_pdata->disp_enp_gpio)) {
 		rc = gpio_request(ctrl_pdata->disp_enp_gpio, "disp_positive_enable");
 		if (rc) {
-			printk("E653: ctrl_pdata->disp_enp_gpio %d failed\n" ,ctrl_pdata->disp_enp_gpio);
+			pr_err("E653: ctrl_pdata->disp_enp_gpio %d failed\n" ,ctrl_pdata->disp_enp_gpio);
 			goto disp_enp_gpio_err;
 		}
 		else
-			printk("E653: ctrl_pdata->disp_enp_gpio %d requested done\n" ,ctrl_pdata->disp_enp_gpio);
+			pr_debug("E653: ctrl_pdata->disp_enp_gpio %d requested done\n" ,ctrl_pdata->disp_enp_gpio);
 	}
 	if (gpio_is_valid(ctrl_pdata->disp_enn_gpio)) {
 		rc = gpio_request(ctrl_pdata->disp_enn_gpio, "disp_negetive_enable");
 		if (rc) {
-			printk("E653: ctrl_pdata->disp_enn_gpio %d failed\n" ,ctrl_pdata->disp_enn_gpio);
+			pr_err("E653: ctrl_pdata->disp_enn_gpio %d failed\n" ,ctrl_pdata->disp_enn_gpio);
 			goto disp_enn_gpio_err;
 		}
 		else
-			printk("E653: ctrl_pdata->disp_enn_gpio %d requested done\n" ,ctrl_pdata->disp_enn_gpio);
+			pr_debug("E653: ctrl_pdata->disp_enn_gpio %d requested done\n" ,ctrl_pdata->disp_enn_gpio);
 	}
        #else
 	if (gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
@@ -313,18 +313,18 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 	// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
 	#ifdef CONFIG_PHICOMM_BOARD_E653Lw
 	if (!gpio_is_valid(ctrl_pdata->disp_enp_gpio)) {
-		pr_debug("%s:%d, enp line not configured\n",
+		pr_err("%s:%d, enp line not configured\n",
 			   __func__, __LINE__);
 	}
 	else
-		pr_err("E653: enp line is %d\n", ctrl_pdata->disp_enp_gpio);
+		pr_debug("E653: enp line is %d\n", ctrl_pdata->disp_enp_gpio);
 
 	if (!gpio_is_valid(ctrl_pdata->disp_enn_gpio)) {
-		pr_debug("%s:%d, enn line not configured\n",
+		pr_err("%s:%d, enn line not configured\n",
 			   __func__, __LINE__);
 	}
 	else
-		pr_err("E653: enn line is %d\n", ctrl_pdata->disp_enp_gpio);
+		pr_debug("E653: enn line is %d\n", ctrl_pdata->disp_enp_gpio);
        #else
 	if (!gpio_is_valid(ctrl_pdata->disp_en_gpio)) {
 		pr_debug("%s:%d, reset line not configured\n",
@@ -349,7 +349,7 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			return rc;
 		}
 		if (!pinfo->cont_splash_enabled) {
-			printk("E653: enable LCM external power supply\n");
+			pr_debug("E653: enable LCM external power supply\n");
 			// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
 			#ifdef CONFIG_PHICOMM_BOARD_E653Lw
 			if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
@@ -396,7 +396,7 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 
 		// FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001 START
 		#ifdef CONFIG_PHICOMM_BOARD_E653Lw
-		printk("E653: disable LCM external power supply\n");
+		pr_debug("E653: disable LCM external power supply\n");
 		if (gpio_is_valid(ctrl_pdata->disp_enp_gpio))
 			gpio_set_value((ctrl_pdata->disp_enp_gpio), 0);
 		mdelay(5);
