@@ -23,6 +23,7 @@
 #include "msm8909-qrd-skuc.dtsi"
 #include "e653lw-dsi-panel-booyi-t50ka45s3m-otm1287a-720p-video.dtsi"
 #include "e653lw-dsi-panel-feixun-fx5022ao-otm1284a-720p-video.dtsi"
+#include "e653lw-dsi-panel-junda-jd500001t1-hx8394d-720p-video.dtsi"
 
 / {
 	qcom,board-id= <0x1000b 0x8>, <0x11000b 0x8>, <0x21000b 0x8>;
@@ -37,6 +38,10 @@
 };
 
 &dsi_feixun_fx5022ao_otm1284a_720p_video {
+	qcom,cont-splash-enabled;
+};
+
+&dsi_junda_jd500001t1_hx8394d_fwvga_video{
 	qcom,cont-splash-enabled;
 };
 
