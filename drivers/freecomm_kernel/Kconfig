@@ -1,0 +1,30 @@
+#
+#freecomm driver configuration
+#
+menuconfig FREECOMM
+    bool "freecomm_driver"
+    default y
+    help
+      Say Y here, and a list of supported will be displayed.
+      This option doesn't affect the kernel.
+
+      If unsure, say Y.
+if FREECOMM
+
+config TP_FIRMWARE_VERSION
+      bool "Touchpanel Firmware version interface support"
+      default n 
+      help
+       Say Y here to enable support for Tp firmware version information.
+
+  
+config DEVICE_VERSION
+     bool "devices_version interface support"
+     help
+       Say Y here to enable support for confirm devices version information.
+
+config BATT_RTC_ALARM
+     bool "battery rtc alarm support"
+     help
+       Say Y here to enable rtc alarm support.
+endif
