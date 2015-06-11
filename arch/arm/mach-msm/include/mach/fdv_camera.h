@@ -45,15 +45,15 @@
 
 //FEIXUN_ADD_FDEV_XUGANG start 
 
-#define MANUF_IMX214	 			"SONY"
-#define MANUF_IMX214_ID				0x06c10000
-#define IMX214_ADDR				0x34
-#define IMX214_DESC				"IMX214"
+#define MANUF_OV8858	 			"OmniVision"
+#define MANUF_OV8858_ID				0x06c10000
+#define OV8858_ADDR				0x6c
+#define OV8858_DESC				"ov8858_q8v19w"
 
-#define MANUF_S5K5E2	 			"SAMSUNG"
-#define MANUF_S5K5E2_ID				0x06c20000
-#define S5K5E2_ADDR				0x20
-#define S5K5E2_DESC				"S5K5E2"
+#define MANUF_GC2355	 			"GALAXYCORE"
+#define MANUF_GC2355_ID				0x06c20000
+#define GC2355_ADDR				0x78
+#define GC2355_DESC				"gc2355_8909"
 
 //FEIXUN_ADD_FDEV_XUGANG end
 

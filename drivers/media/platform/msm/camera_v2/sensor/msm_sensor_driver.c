@@ -17,6 +17,10 @@
 #include "camera.h"
 #include "msm_cci.h"
 #include "msm_camera_dt_util.h"
+//FEIXUN_ADD_FDEV_XUGANG start
+#include <mach/fdv_camera.h>
+#include <mach/fdv.h>
+//FEIXUN_ADD_FDEV_XUGANG end
 
 /* Logging macro */
 #undef CDBG
@@ -891,6 +895,19 @@ int32_t msm_sensor_driver_probe(void *setting,
 		pr_err("%s failed %d\n", __func__, __LINE__);
 		goto free_camera_info;
 	}
+
+        //FEIXUN_ADD_FDEV_XUGANG start
+        if(0 == strcmp("ov8858_q8v19w", slave_info->sensor_name))
+        {
+            register_fdv_with_desc(DEV_CAMERA, MANUF_OV8858, MANUF_OV8858_ID | OV8858_ADDR, OV8858_DESC);
+            confirm_fdv(DEV_CAMERA, MANUF_OV8858, MANUF_OV8858_ID | OV8858_ADDR);
+        }
+        else if(0 == strcmp("gc2355_8909", slave_info->sensor_name))
+        {
+            register_fdv_with_desc(DEV_CAMERA_SECOND, MANUF_GC2355, MANUF_GC2355_ID | GC2355_ADDR, GC2355_DESC);
+            confirm_fdv(DEV_CAMERA_SECOND, MANUF_GC2355, MANUF_GC2355_ID | GC2355_ADDR);
+        }
+        //FEIXUN_ADD_FDEV_XUGANG end
 
 	/* Power up and probe sensor */
 	rc = s_ctrl->func_tbl->sensor_power_up(s_ctrl);
