@@ -620,6 +620,42 @@ static int force_fsm_state(struct qpnp_bms_chip *chip, u8 state)
 	return 0;
 }
 
+static int set_sample_interval(struct qpnp_bms_chip *chip,
+				u8 fsm_state, u32 interval)
+{
+	int rc;
+	u8 val = 0, reg;
+
+	switch (fsm_state) {
+	case S1_STATE:
+		val = interval / 10;
+		reg = S1_SAMPLE_INTVL_REG;
+		break;
+	case S2_STATE:
+		val = interval / 10;
+		reg = S2_SAMPLE_INTVL_REG;
+		break;
+	case S3_STATE:
+		val = interval;
+		reg = S3_SAMPLE_INTVL_REG;
+		break;
+	default:
+		pr_err("Invalid state %d\n", fsm_state);
+		return -EINVAL;
+	}
+
+	rc = qpnp_write_wrapper(chip, &val, chip->base + reg, 1);
+	if (rc) {
+		pr_err("Failed to set state(%d) sample_interval, rc=%d\n",
+						fsm_state, rc);
+		return rc;
+	}
+
+
+	return 0;
+}
+
+
 static int get_sample_interval(struct qpnp_bms_chip *chip,
 				u8 fsm_state, u32 *interval)
 {
@@ -1416,7 +1452,8 @@ static int report_eoc(struct qpnp_bms_chip *chip)
 				POWER_SUPPLY_PROP_STATUS, &ret);
 		if (rc) {
 			pr_err("Unable to get battery 'STATUS' rc=%d\n", rc);
-		} else if (ret.intval != POWER_SUPPLY_STATUS_FULL) {
+		} else if (ret.intval != POWER_SUPPLY_STATUS_FULL
+						&& chip->last_ocv_uv >= 4340000) {
 			pr_debug("Report EOC to charger\n");
 			ret.intval = POWER_SUPPLY_STATUS_FULL;
 			rc = chip->batt_psy->set_property(chip->batt_psy,
@@ -1674,6 +1711,9 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 					/ SOC_CHANGE_PER_SEC);
 
 		if (chip->last_soc_unbound) {
+			if(soc >= 80){
+				soc_change = min(1, soc_change);
+			}
 			chip->last_soc_unbound = false;
 		} else {
 			/*
@@ -1681,6 +1721,10 @@ static int report_vm_bms_soc(struct qpnp_bms_chip *chip)
 			 * only change reported SoC by 1.
 			 */
 			soc_change = min(1, soc_change);
+		}
+
+		if ((chip->last_soc == 100) && (soc == 99) && !charging) {
+			soc_change = min(0, soc_change);
 		}
 
 		if (soc < chip->last_soc && soc != 0)
@@ -3066,6 +3110,7 @@ static int bms_load_hw_defaults(struct qpnp_bms_chip *chip)
 	get_sample_count(chip, S2_STATE, &count[1]);
 	get_fifo_length(chip, S1_STATE, &fifo[0]);
 	get_fifo_length(chip, S2_STATE, &fifo[1]);
+	set_sample_interval(chip, S3_STATE, 45);
 
 	/* Force the BMS state to S2 at boot-up */
 	rc = force_fsm_state(chip, S2_STATE);

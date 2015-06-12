@@ -201,8 +201,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			qcom,vddmax-mv = <4350>;
-			qcom,vddsafe-mv = <4350>;
+			qcom,vddmax-mv = <4370>;
+			qcom,vddsafe-mv = <4380>;
 			qcom,vinmin-mv = <4308>;
 			qcom,ibatsafe-ma = <1440>;
 			qcom,thermal-mitigation = <1080 720 630 0>;
