@@ -6,6 +6,7 @@ cd /system/bin/
 #time_now=0
 echo "log_debug test start........" > /data/log_debug.txt
 sdcard0=$EXTERNAL_STORAGE
+sdcard0_src=$EMULATED_STORAGE_SOURCE
 sdcard1=$SECONDARY_STORAGE
 echo $sdcard0 >/data/log_debug.txt
 echo $sdcard1 >/data/log_debug.txt
@@ -20,12 +21,13 @@ echo "log_debug test" >> /data/log_debug.txt
 #ex_sdcard_mounted=$(busybox mount|busybox grep "sdcard type vfat" |busybox cut -d ' ' -f5)	#if mount got "vfat"
 in_sdcard_mounted=$(busybox mount|busybox grep "$sdcard0 type vfat" |busybox cut -d ' ' -f5)	#if mount got "vfat"
 in_sdcard_mounted1=$(busybox mount|busybox grep "$sdcard0 type fuse" |busybox cut -d ' ' -f5)	#if mount got "fuse"
+in_sdcard_mounted2=$(busybox mount|busybox grep "$sdcard0_src type fuse" |busybox cut -d ' ' -f5)	#if mount got "fuse"
 ex_sdcard_mounted=$(busybox mount|busybox grep "$sdcard1 type vfat" |busybox cut -d ' ' -f5)	#if mount got "vfat"
 ex_sdcard_mounted1=$(busybox mount|busybox grep "$sdcard1 type fuse" |busybox cut -d ' ' -f5)	#if mount got "fuse"
 log_debug_enable=$(getprop persist.sys.log.debug.enable)
 
 #if [ "$log_started" == "0" -a "$log_debug_enable" == "1" -a "$sdcard_mounted" == "vfat" ];then
-if [ "$log_started" == "0" -a "$log_debug_enable" == "1" ] && [ "$in_sdcard_mounted1" == "fuse" -o "$in_sdcard_mounted" == "vfat" ];then
+if [ "$log_started" == "0" -a "$log_debug_enable" == "1" ] && [ "$in_sdcard_mounted" == "fuse" -o "$in_sdcard_mounted1" == "fuse" -o "$in_sdcard_mounted2" == "fuse" ];then
 	. /system/bin/log_debug.sh 
 	log_started=1
 elif [ "$log_started" == "0" -a "$log_debug_enable" == "2" ] && [ "$ex_sdcard_mounted1" == "fuse" -o "$ex_sdcard_mounted" == "vfat" ];then
