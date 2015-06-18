@@ -107,7 +107,9 @@ enum {
 
 #define VOLTAGE_CONVERTER(value, min_value, step_size)\
 	((value - min_value)/step_size);
-
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#define EXT_SPK_PA
+#endif
 enum {
 	AIF1_PB = 0,
 	AIF1_CAP,
@@ -126,8 +128,9 @@ enum {
 static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static const DECLARE_TLV_DB_SCALE(analog_gain, 0, 25, 1);
 static struct snd_soc_dai_driver msm8x16_wcd_i2s_dai[];
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
 static int ext_spk_amp_gpio = -1;
-
+#endif
 #define MSM8X16_WCD_ACQUIRE_LOCK(x) \
 	mutex_lock_nested(&x, SINGLE_DEPTH_NESTING);
 
@@ -210,14 +213,18 @@ static void msm8x16_wcd_set_auto_zeroing(struct snd_soc_codec *codec,
 		bool enable);
 static void msm8x16_wcd_configure_cap(struct snd_soc_codec *codec,
 		bool micbias1, bool micbias2);
-static void msm8x16_skip_imped_detect(struct snd_soc_codec *codec);
 
 struct msm8x16_wcd_spmi msm8x16_wcd_modules[MAX_MSM8X16_WCD_DEVICE];
 
 static void *modem_state_notifier;
 
 static struct snd_soc_codec *registered_codec;
-
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#ifdef EXT_SPK_PA
+static bool isSpeakerEn;
+static bool ExtSpkPaState;
+#endif
+#endif
 void msm8x16_wcd_spk_ext_pa_cb(
 		int (*codec_spk_ext_pa)(struct snd_soc_codec *codec,
 			int enable), struct snd_soc_codec *codec)
@@ -278,7 +285,6 @@ static const struct wcd_mbhc_cb mbhc_cb = {
 	.set_auto_zeroing = msm8x16_wcd_set_auto_zeroing,
 	.get_hwdep_fw_cal = msm8x16_wcd_get_hwdep_fw_cal,
 	.set_cap_mode = msm8x16_wcd_configure_cap,
-	.skip_imped_detect = msm8x16_skip_imped_detect,
 };
 
 static const uint32_t wcd_imped_val[] = {4, 8, 12, 16,
@@ -2458,18 +2464,6 @@ static void msm8x16_wcd_set_auto_zeroing(struct snd_soc_codec *codec,
 	}
 }
 
-static void msm8x16_skip_imped_detect(struct snd_soc_codec *codec)
-{
-	struct msm8x16_wcd_priv *msm8x16_wcd;
-
-	if (codec != NULL) {
-		msm8x16_wcd = snd_soc_codec_get_drvdata(codec);
-		msm8x16_wcd->mbhc.skip_imped_detection = true;
-	} else {
-		pr_debug("%s: Codec pointer is NULL\n", __func__);
-	}
-}
-
 static void msm8x16_trim_btn_reg(struct snd_soc_codec *codec)
 {
 	struct msm8x16_wcd_priv *msm8x16_wcd = snd_soc_codec_get_drvdata(codec);
@@ -3057,23 +3051,42 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#ifdef EXT_SPK_PA
+		if(isSpeakerEn){
+			if(!ExtSpkPaState){
+				gpio_direction_output(ext_spk_amp_gpio, 0);
+				mdelay(1);
+				gpio_direction_output(ext_spk_amp_gpio, 1);
+				udelay(0.75);
+				gpio_direction_output(ext_spk_amp_gpio, 0);
+				udelay(0.75);
+				//gpio_direction_output(ext_spk_amp_gpio, 1);
+				//udelay(0.75);
+				//gpio_direction_output(ext_spk_amp_gpio, 0);
+				//udelay(0.75);
+				gpio_direction_output(ext_spk_amp_gpio, 1);
+				ExtSpkPaState = true;
+				printk("##### turn on Ex Spk Pa, 3plus  for 1 ms delay 075 #####\n");
+				}else{
+				printk("##### Ext Spk Pa already on! #####\n");
+				}
+			}else{
+			if(ExtSpkPaState){
+				gpio_direction_output(ext_spk_amp_gpio, 0);
+				ExtSpkPaState = false;
+				printk("##### shut down ext spk pa #####\n");
+				}else{
+				printk("##### Ext Spk Pa already off! #####\n");
+				}
+			}
+#endif
+#endif
 		if (w->shift == 5){
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_PRE_HPHL_PA_ON);
-                	printk("##### in the status HPHL PA ON #####\n");
-			gpio_direction_output(ext_spk_amp_gpio, 0);
 		}
 		else if (w->shift == 4){
-			gpio_direction_output(ext_spk_amp_gpio, 1);
-			usleep(2);
-			gpio_direction_output(ext_spk_amp_gpio, 0);
-			usleep(2);
-			gpio_direction_output(ext_spk_amp_gpio, 1);
-			usleep(2);
-			gpio_direction_output(ext_spk_amp_gpio, 0);
-			usleep(2);
-			gpio_direction_output(ext_spk_amp_gpio, 1);
-			printk("##### in the status HPHR PA ON #####\n");
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_PRE_HPHR_PA_ON);
 		snd_soc_update_bits(codec,
@@ -3119,15 +3132,11 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHL_PA_OFF);
-			printk("##### in the status HPHL PA OFF #####\n");
-			gpio_direction_output(ext_spk_amp_gpio, 0);
 		} else if (w->shift == 4) {
 			clear_bit(WCD_MBHC_HPHR_PA_OFF_ACK,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHR_PA_OFF);
-			printk("##### in the status HPHR PA OFF #####\n");
-			gpio_direction_output(ext_spk_amp_gpio, 0);
 		}
 		usleep_range(4000, 4100);
 
@@ -3138,6 +3147,17 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 			"%s: sleep 10 ms after %s PA disable.\n", __func__,
 			w->name);
 		usleep_range(10000, 10100);
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#ifdef EXT_SPK_PA
+		if(ExtSpkPaState){
+			printk("##### in the status HPH PA OFF #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
+			ExtSpkPaState = false;
+			}else{
+				printk("##### Ext Spk Pa already off! #####\n");
+			}
+#endif
+#endif
 		break;
 	}
 	return 0;
@@ -4630,7 +4650,39 @@ static void msm8x16_wcd_disable_supplies(struct msm8x16_wcd *msm8x16,
 	regulator_bulk_free(msm8x16->num_of_supplies, msm8x16->supplies);
 	kfree(msm8x16->supplies);
 }
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#ifdef EXT_SPK_PA
+struct kobject *kobj;
 
+static ssize_t rs_ctl_show(struct kobject *kobj, struct kobj_attribute *attr,
+			 char *buf)
+{
+	return 0;
+}
+
+static ssize_t rs_ctl_store(struct kobject *kobj, struct kobj_attribute *attr,
+			  const char * buf, size_t n)
+{
+//	int value;
+	pr_info("in the function %s, buf[0] = %d ,n=%d =\n",__func__,buf[0], n);
+	if(buf[0] ==1){
+	    //value = gpio_get_value(ext_spk_amp_gpio);
+	    //if(value == 0)
+	    //    gpio_direction_output(ext_spk_amp_gpio,1);
+	    isSpeakerEn = true;
+	}else{
+      //     value = gpio_get_value(ext_spk_amp_gpio);
+	    //if(value > 0)
+	    //    gpio_direction_output(ext_spk_amp_gpio,0);
+	    isSpeakerEn = false;
+	}
+	return 0;
+}
+
+static struct kobj_attribute rs_ctl_id_attr =
+	__ATTR(controls_attr ,0777,rs_ctl_show, rs_ctl_store);
+#endif
+#endif
 static int msm8x16_wcd_device_init(struct msm8x16_wcd *msm8x16)
 {
 	mutex_init(&msm8x16->io_lock);
@@ -4749,16 +4801,29 @@ static int msm8x16_wcd_spmi_probe(struct spmi_device *spmi)
 	ret = snd_soc_register_codec(&spmi->dev, &soc_codec_dev_msm8x16_wcd,
 				     msm8x16_wcd_i2s_dai,
 				     ARRAY_SIZE(msm8x16_wcd_i2s_dai));
-        ext_spk_amp_gpio = of_get_named_gpio(spmi->dev.of_node,
-                "qcom,ext-spk-amp-gpio", 0);
-        if (ext_spk_amp_gpio >= 0) {
-                ret = gpio_request(ext_spk_amp_gpio, "ext_spk_amp_gpio");
-                if (ret) {
-                        pr_err("%s: gpio_request failed for ext_spk_amp_gpio.\n",
-                                __func__);
-                }
-        }
-	
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+#ifdef EXT_SPK_PA
+	isSpeakerEn = false;
+	ExtSpkPaState = false;
+
+	kobj = kobject_create_and_add("rs_ctl", NULL);
+	ret = sysfs_create_file(kobj, &rs_ctl_id_attr.attr);
+	if (ret) {
+		printk(KERN_WARNING "sysfs_create_file partition_id failed\n");
+		return ret;
+	}
+
+	ext_spk_amp_gpio = of_get_named_gpio(spmi->dev.of_node,
+									"qcom,ext-spk-amp-gpio", 0);
+	if (ext_spk_amp_gpio >= 0) {
+		ret = gpio_request(ext_spk_amp_gpio, "ext_spk_amp_gpio");
+		if (ret) {
+		    pr_err("%s: gpio_request failed for ext_spk_amp_gpio.\n",
+		            __func__);
+		}
+	}
+#endif
+#endif
 	if (ret) {
 		dev_err(&spmi->dev,
 			"%s:snd_soc_register_codec failed with error %d\n",
@@ -4783,9 +4848,10 @@ static void msm8x16_wcd_device_exit(struct msm8x16_wcd *msm8x16)
 static int msm8x16_wcd_spmi_remove(struct spmi_device *spmi)
 {
 	struct msm8x16_wcd *msm8x16 = dev_get_drvdata(&spmi->dev);
-
+#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
         if (gpio_is_valid(ext_spk_amp_gpio))
                 gpio_free(ext_spk_amp_gpio);
+#endif
 	msm8x16_wcd_device_exit(msm8x16);
 	return 0;
 }
@@ -4811,7 +4877,6 @@ static int msm8x16_wcd_spmi_suspend(struct spmi_device *spmi,
 {
 	struct resource *wcd_resource;
 
-	gpio_direction_output(ext_spk_amp_gpio, 0);
 	wcd_resource = spmi_get_resource(spmi, NULL, IORESOURCE_MEM, 0);
 	if (!wcd_resource) {
 		dev_err(&spmi->dev, "Unable to get CDC SPMI resource\n");
