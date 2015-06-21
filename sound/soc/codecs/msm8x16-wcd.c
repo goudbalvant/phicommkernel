@@ -220,6 +220,11 @@ static void *modem_state_notifier;
 
 static struct snd_soc_codec *registered_codec;
 
+#ifdef EXT_SPK_PA
+static bool isSpeakerEn;
+static bool ExtSpkPaState;
+#endif
+
 void msm8x16_wcd_spk_ext_pa_cb(
 		int (*codec_spk_ext_pa)(struct snd_soc_codec *codec,
 			int enable), struct snd_soc_codec *codec)
@@ -4694,7 +4699,6 @@ static ssize_t rs_ctl_store(struct kobject *kobj, struct kobj_attribute *attr,
 static struct kobj_attribute rs_ctl_id_attr =
 	__ATTR(controls_attr ,0777,rs_ctl_show, rs_ctl_store);
 #endif
-
 static int msm8x16_wcd_device_init(struct msm8x16_wcd *msm8x16)
 {
 	mutex_init(&msm8x16->io_lock);
