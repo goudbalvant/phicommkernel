@@ -128,9 +128,8 @@ enum {
 static const DECLARE_TLV_DB_SCALE(digital_gain, 0, 1, 0);
 static const DECLARE_TLV_DB_SCALE(analog_gain, 0, 25, 1);
 static struct snd_soc_dai_driver msm8x16_wcd_i2s_dai[];
-#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
 static int ext_spk_amp_gpio = -1;
-#endif
+
 #define MSM8X16_WCD_ACQUIRE_LOCK(x) \
 	mutex_lock_nested(&x, SINGLE_DEPTH_NESTING);
 
@@ -213,18 +212,14 @@ static void msm8x16_wcd_set_auto_zeroing(struct snd_soc_codec *codec,
 		bool enable);
 static void msm8x16_wcd_configure_cap(struct snd_soc_codec *codec,
 		bool micbias1, bool micbias2);
+static void msm8x16_skip_imped_detect(struct snd_soc_codec *codec);
 
 struct msm8x16_wcd_spmi msm8x16_wcd_modules[MAX_MSM8X16_WCD_DEVICE];
 
 static void *modem_state_notifier;
 
 static struct snd_soc_codec *registered_codec;
-#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
-#ifdef EXT_SPK_PA
-static bool isSpeakerEn;
-static bool ExtSpkPaState;
-#endif
-#endif
+
 void msm8x16_wcd_spk_ext_pa_cb(
 		int (*codec_spk_ext_pa)(struct snd_soc_codec *codec,
 			int enable), struct snd_soc_codec *codec)
@@ -285,6 +280,7 @@ static const struct wcd_mbhc_cb mbhc_cb = {
 	.set_auto_zeroing = msm8x16_wcd_set_auto_zeroing,
 	.get_hwdep_fw_cal = msm8x16_wcd_get_hwdep_fw_cal,
 	.set_cap_mode = msm8x16_wcd_configure_cap,
+	.skip_imped_detect = msm8x16_skip_imped_detect,
 };
 
 static const uint32_t wcd_imped_val[] = {4, 8, 12, 16,
@@ -2464,6 +2460,18 @@ static void msm8x16_wcd_set_auto_zeroing(struct snd_soc_codec *codec,
 	}
 }
 
+static void msm8x16_skip_imped_detect(struct snd_soc_codec *codec)
+{
+	struct msm8x16_wcd_priv *msm8x16_wcd;
+
+	if (codec != NULL) {
+		msm8x16_wcd = snd_soc_codec_get_drvdata(codec);
+		msm8x16_wcd->mbhc.skip_imped_detection = true;
+	} else {
+		pr_debug("%s: Codec pointer is NULL\n", __func__);
+	}
+}
+
 static void msm8x16_trim_btn_reg(struct snd_soc_codec *codec)
 {
 	struct msm8x16_wcd_priv *msm8x16_wcd = snd_soc_codec_get_drvdata(codec);
@@ -3132,11 +3140,15 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHL_PA_OFF);
+			printk("##### in the status HPHL PA OFF #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
 		} else if (w->shift == 4) {
 			clear_bit(WCD_MBHC_HPHR_PA_OFF_ACK,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHR_PA_OFF);
+			printk("##### in the status HPHR PA OFF #####\n");
+			gpio_direction_output(ext_spk_amp_gpio, 0);
 		}
 		usleep_range(4000, 4100);
 
@@ -4650,7 +4662,7 @@ static void msm8x16_wcd_disable_supplies(struct msm8x16_wcd *msm8x16,
 	regulator_bulk_free(msm8x16->num_of_supplies, msm8x16->supplies);
 	kfree(msm8x16->supplies);
 }
-#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
+
 #ifdef EXT_SPK_PA
 struct kobject *kobj;
 
@@ -4682,7 +4694,7 @@ static ssize_t rs_ctl_store(struct kobject *kobj, struct kobj_attribute *attr,
 static struct kobj_attribute rs_ctl_id_attr =
 	__ATTR(controls_attr ,0777,rs_ctl_show, rs_ctl_store);
 #endif
-#endif
+
 static int msm8x16_wcd_device_init(struct msm8x16_wcd *msm8x16)
 {
 	mutex_init(&msm8x16->io_lock);
@@ -4877,6 +4889,7 @@ static int msm8x16_wcd_spmi_suspend(struct spmi_device *spmi,
 {
 	struct resource *wcd_resource;
 
+	gpio_direction_output(ext_spk_amp_gpio, 0);
 	wcd_resource = spmi_get_resource(spmi, NULL, IORESOURCE_MEM, 0);
 	if (!wcd_resource) {
 		dev_err(&spmi->dev, "Unable to get CDC SPMI resource\n");
