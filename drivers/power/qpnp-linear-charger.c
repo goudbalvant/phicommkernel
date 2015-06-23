@@ -919,7 +919,7 @@ static int qpnp_lbc_ibatsafe_set(struct qpnp_lbc_chip *chip, int safe_current)
 }
 
 #define QPNP_LBC_IBATMAX_MIN	90
-#define QPNP_LBC_IBATMAX_MAX	1080
+#define QPNP_LBC_IBATMAX_MAX	990
 /*
  * Set maximum current limit from charger
  * ibat =  System current + charging current
