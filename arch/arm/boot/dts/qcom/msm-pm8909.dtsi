@@ -208,8 +208,8 @@
 			qcom,thermal-mitigation = <1080 720 630 0>;
 			qcom,cool-bat-decidegc = <100>;
 			qcom,warm-bat-decidegc = <450>;
-			qcom,cool-bat-mv = <4200>;
-			qcom,warm-bat-mv = <4200>;
+			qcom,cool-bat-mv = <4300>;
+			qcom,warm-bat-mv = <4300>;
 			qcom,ibatmax-warm-ma = <360>;
 			qcom,ibatmax-cool-ma = <360>;
 			qcom,batt-hot-percentage = <35>;
