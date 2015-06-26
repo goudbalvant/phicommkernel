@@ -3145,15 +3145,11 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHL_PA_OFF);
-			printk("##### in the status HPHL PA OFF #####\n");
-			gpio_direction_output(ext_spk_amp_gpio, 0);
 		} else if (w->shift == 4) {
 			clear_bit(WCD_MBHC_HPHR_PA_OFF_ACK,
 				&msm8x16_wcd->mbhc.hph_pa_dac_state);
 			msm8x16_notifier_call(codec,
 					WCD_EVENT_POST_HPHR_PA_OFF);
-			printk("##### in the status HPHR PA OFF #####\n");
-			gpio_direction_output(ext_spk_amp_gpio, 0);
 		}
 		usleep_range(4000, 4100);
 
@@ -3164,7 +3160,6 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 			"%s: sleep 10 ms after %s PA disable.\n", __func__,
 			w->name);
 		usleep_range(10000, 10100);
-#ifndef CONFIG_PHICOMM_BOARD_C520Lwd
 #ifdef EXT_SPK_PA
 		if(ExtSpkPaState){
 			printk("##### in the status HPH PA OFF #####\n");
@@ -3173,7 +3168,6 @@ static int msm8x16_wcd_hph_pa_event(struct snd_soc_dapm_widget *w,
 			}else{
 				printk("##### Ext Spk Pa already off! #####\n");
 			}
-#endif
 #endif
 		break;
 	}
@@ -4893,7 +4887,6 @@ static int msm8x16_wcd_spmi_suspend(struct spmi_device *spmi,
 {
 	struct resource *wcd_resource;
 
-	gpio_direction_output(ext_spk_amp_gpio, 0);
 	wcd_resource = spmi_get_resource(spmi, NULL, IORESOURCE_MEM, 0);
 	if (!wcd_resource) {
 		dev_err(&spmi->dev, "Unable to get CDC SPMI resource\n");
