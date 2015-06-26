@@ -254,7 +254,7 @@
 		cdc-ext-mclk-lines {
 			qcom,pins = <&gp 98>;
 			qcom,num-grp-pins = <1>;
-			qcom,pin-func = <2>;
+			qcom,pin-func = <0>;
 			label = "cdc-ext-mclk-lines";
 			cdc_ext_mclk_act: ext_mclk_on {
 				drive-strength = <8>;
