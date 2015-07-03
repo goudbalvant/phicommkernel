@@ -46,7 +46,14 @@
  *          4. coordinates & keys optimization
  *                  By Meta, 2014/01/14
  */
-
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-10	yaming.chen	add fdv info for TP 			FEIXUN_ADD_FDV_INFO_CHENYAMING_001
+ *
+ */
 #include <linux/irq.h>
 #include <linux/regulator/consumer.h>
 #include "gt9xx.h"
@@ -55,7 +62,11 @@
 #include <linux/module.h>
 #include <linux/debugfs.h>
 #include <linux/slab.h>
-
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#endif
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
 #if GTP_ICS_SLOT_REPORT
     #include <linux/input/mt.h>
 #endif
@@ -1523,6 +1534,23 @@ static s32 gtp_init_panel(struct goodix_ts_data *ts)
             return -1;
         }
         GTP_INFO("Sensor_ID: %d", sensor_id);
+
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+#if defined (CONFIG_DEVICE_VERSION)
+    #ifdef CONFIG_PHICOMM_BOARD_E653Lw
+    register_fdv_with_desc(DEV_TP, MANUF_GOODIX, MANUF_GOODIX_ID_BOYI|0x26, "GOODIX_BOYI");
+    register_fdv_with_desc(DEV_TP, MANUF_GOODIX, MANUF_GOODIX_ID_FEIXIAN|0x26, "GOODIX_FEIXIAN");
+    if(sensor_id == 0){
+        confirm_fdv(DEV_TP,MANUF_GOODIX,MANUF_GOODIX_ID_BOYI|0x26);
+    }else if(sensor_id == 1){
+        confirm_fdv(DEV_TP,MANUF_GOODIX,MANUF_GOODIX_ID_FEIXIAN|0x26);
+	}else if(sensor_id == 2){
+        confirm_fdv(DEV_TP,MANUF_GOODIX,MANUF_GOODIX_ID_BOYI|0x26);
+    }
+    #endif
+#endif
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
+
     }
     ts->gtp_cfg_len = cfg_info_len[sensor_id];
     GTP_INFO("CTP_CONFIG_GROUP%d used, config length: %d", sensor_id + 1, ts->gtp_cfg_len);
@@ -1865,6 +1893,7 @@ static s8 gtp_request_io_port(struct goodix_ts_data *ts)
     {
         GTP_ERROR("Failed to request GPIO:%d, ERRNO:%d", (s32)GTP_INT_PORT, ret);
         ret = -ENODEV;
+        return ret;
     }
     else
     {
@@ -1877,6 +1906,7 @@ static s8 gtp_request_io_port(struct goodix_ts_data *ts)
     {
         GTP_ERROR("Failed to request GPIO:%d, ERRNO:%d",(s32)GTP_RST_PORT,ret);
         ret = -ENODEV;
+        return ret;
     }
 
     GTP_GPIO_OUTPUT(GTP_RST_PORT, 0);

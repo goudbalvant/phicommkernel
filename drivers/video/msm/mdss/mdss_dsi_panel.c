@@ -15,6 +15,7 @@
  *
  * ----------	---------	-------------------------------------	--------------------------
  * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ * 2015-06-10	yaming.chen	add fdv info for LCM 			FEIXUN_ADD_FDV_INFO_CHENYAMING_001
  *
  */
  
@@ -31,6 +32,12 @@
 #include <linux/err.h>
 
 #include "mdss_dsi.h"
+
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#endif
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
 
 #define DT_CMD_HDR 6
 
@@ -1764,6 +1771,21 @@ int mdss_dsi_panel_init(struct device_node *node,
 	static const char *panel_name;
 	struct mdss_panel_info *pinfo;
 
+       // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+       #ifdef CONFIG_DEVICE_VERSION
+       #ifdef CONFIG_PHICOMM_BOARD_E653Lw
+       register_fdv_with_desc(DEV_LCD, MANUF_BOOYI, MANUF_BOOYI_ID, "OTM1287A");
+       register_fdv_with_desc(DEV_LCD, MANUF_FEIXUN, MANUF_FEIXUN_ID, "OTM1284A");
+       register_fdv_with_desc(DEV_LCD, MANUF_JUNDA, MANUF_JUNDA_ID, "HX8394D");
+       #endif
+       #ifdef CONFIG_PHICOMM_BOARD_C630Lw
+       register_fdv_with_desc(DEV_LCD, MANUF_BOOYI, MANUF_BOOYI_ID, "FL10802");
+       register_fdv_with_desc(DEV_LCD, MANUF_FEIXUN, MANUF_FEIXUN_ID, "FL10802");
+       register_fdv_with_desc(DEV_LCD, MANUF_JUNDA, MANUF_JUNDA_ID, "HX8379C");
+       #endif
+       #endif
+       // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
+
 	if (!node || !ctrl_pdata) {
 		pr_err("%s: Invalid arguments\n", __func__);
 		return -ENODEV;
@@ -1781,6 +1803,25 @@ int mdss_dsi_panel_init(struct device_node *node,
 		pr_info("%s: Panel Name = %s\n", __func__, panel_name);
 		strlcpy(&pinfo->panel_name[0], panel_name, MDSS_MAX_PANEL_LEN);
 	}
+
+        // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+        #ifdef CONFIG_DEVICE_VERSION
+        if(!strcmp(panel_name, "junda jd500001t1 hx8394d fwvga video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_JUNDA, MANUF_JUNDA_ID);
+        }else if(!strcmp(panel_name, "booyi t50ka45s3m otm1287a 720p video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_BOOYI, MANUF_BOOYI_ID);
+        }else if(!strcmp(panel_name, "feixun fx5022ao otm1284a 720p video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_FEIXUN, MANUF_FEIXUN_ID);
+        }else if(!strcmp(panel_name, "junda jd500002b1 hx8379c fwvga video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_JUNDA, MANUF_JUNDA_ID);
+        }else if(!strcmp(panel_name, "booyi t50mp17t9m fl10802 fwvga video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_BOOYI, MANUF_BOOYI_ID);
+        }else if(!strcmp(panel_name, "feixun fx5024tf fl10802 fwvga video mode dsi panel")) {
+                confirm_fdv(DEV_LCD, MANUF_FEIXUN, MANUF_FEIXUN_ID);
+        }
+        #endif
+        // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
+
 	rc = mdss_panel_parse_dt(node, ctrl_pdata);
 	if (rc) {
 		pr_err("%s:%d panel dt parse failed\n", __func__, __LINE__);

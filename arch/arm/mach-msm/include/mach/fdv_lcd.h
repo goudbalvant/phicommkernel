@@ -40,6 +40,9 @@
 #define MANUF_TRULY             "TRULY"
 #define MANUF_TRULY_ID          0x00700000
 
+#define MANUF_JUNDA             "JUNDA"
+#define MANUF_JUNDA_ID          0x00800000
+
 #define X130V_BYD_LCD_PN        ToString(810000869) 
 #define X130V_FEIXUN_LCD_PN     ToString(907000089) 
 

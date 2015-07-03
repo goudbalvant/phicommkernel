@@ -32,6 +32,10 @@
 #include <linux/sensors.h>
 #include "mpu6050.h"
 
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#endif
+
 #define DEBUG_NODE
 
 #define IS_ODD_NUMBER(x)	(x & 1UL)
@@ -2827,7 +2831,9 @@ static int mpu6050_probe(struct i2c_client *client,
 	struct mpu6050_sensor *sensor;
 	struct mpu6050_platform_data *pdata;
 	int ret;
-
+#ifdef CONFIG_DEVICE_VERSION
+        register_fdv_with_desc(DEV_GYROSCOPE,MANUF_INVENSENSE,MANUF_INVENSENSE_ID|0x68,MPU6050_DEV_NAME_GYRO);
+#endif
 	ret = i2c_check_functionality(client->adapter,
 					 I2C_FUNC_SMBUS_BYTE |
 					 I2C_FUNC_SMBUS_BYTE_DATA |
@@ -3100,7 +3106,9 @@ static int mpu6050_probe(struct i2c_client *client,
 				"Power off mpu6050 failed\n");
 		goto err_remove_gyro_cdev;
 	}
-
+#ifdef CONFIG_DEVICE_VERSION
+        confirm_fdv(DEV_GYROSCOPE,MANUF_INVENSENSE,MANUF_INVENSENSE_ID|0x68);
+#endif
 	return 0;
 err_remove_gyro_cdev:
 	sensors_classdev_unregister(&sensor->gyro_cdev);

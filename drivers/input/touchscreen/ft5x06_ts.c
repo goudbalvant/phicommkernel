@@ -15,7 +15,15 @@
  * GNU General Public License for more details.
  *
  */
-
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-06-10	yaming.chen	add fdv info for TP 			FEIXUN_ADD_FDV_INFO_CHENYAMING_001
+ *
+ */
+ 
 #include <linux/i2c.h>
 #include <linux/input.h>
 #include <linux/input/mt.h>
@@ -32,7 +40,11 @@
 #include <linux/sensors.h>
 #include <linux/input/ft5x06_ts.h>
 #include <linux/proc_fs.h>
-
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#endif
+// FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
 #if defined(CONFIG_FB)
 #include <linux/notifier.h>
 #include <linux/fb.h>
@@ -2615,6 +2627,15 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	register_early_suspend(&data->early_suspend);
 #endif
  ft_5x06_create_file_for_fwUpdate_proc();
+
+       // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 START
+       #if defined (CONFIG_DEVICE_VERSION)
+       #ifdef CONFIG_PHICOMM_BOARD_C630Lw
+       register_fdv_with_desc(DEV_TP, FT6336_TS, FT6336_TS_ID|0x29, "FT6336S");
+       confirm_fdv(DEV_TP,FT6336_TS,FT6336_TS_ID|0x29);
+       #endif
+       #endif
+       // FEIXUN_ADD_FDV_INFO_CHENYAMING_001 END
 
 	return 0;
 

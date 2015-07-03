@@ -33,6 +33,10 @@
 #include <linux/of_gpio.h>
 #include <linux/sensors.h>
 
+#ifdef CONFIG_DEVICE_VERSION
+#include <mach/fdv.h>
+#endif
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
@@ -5018,8 +5022,14 @@ static void bma2x2_report_axis_data(struct bma2x2_data *bma2x2,
 			"read accel data failed! err = %d\n", err);
 		return;
 	}
+	// yaming.chen, DATE20150519, NOTE, DATE20150519-01 START
+	#ifdef CONFIG_PHICOMM_BOARD_C630Lw
+	//printk("yaming.chen x=%d, y=%d\n, z=%d\n", value->x, value->y, value->z);
+	#else
 	value->x=-value->x;
 	value->y=-value->y;
+	#endif
+	// yaming.chen, DATE20150519-01 END
 	input_report_abs(bma2x2->input, ABS_X,
 			(int)value->x << bma2x2->sensitivity);
 	input_report_abs(bma2x2->input, ABS_Y,
@@ -7864,6 +7874,10 @@ static int bma2x2_probe(struct i2c_client *client,
 
 	dev_notice(&client->dev, "BMA2x2 driver probe successfully");
 
+#ifdef CONFIG_DEVICE_VERSION
+        confirm_fdv(DEV_G_SENSOR,MANUF_BOSCH,MANUF_BOSCH_BMA222_ID|0x18);
+#endif
+
 	bma2x2_pinctrl_state(data, false);
 	bma2x2_power_ctl(data, false);
 	return 0;
@@ -8077,6 +8091,9 @@ static struct i2c_driver bma2x2_driver = {
 
 static int __init BMA2X2_init(void)
 {
+#ifdef CONFIG_DEVICE_VERSION
+        register_fdv_with_desc(DEV_G_SENSOR,MANUF_BOSCH,MANUF_BOSCH_BMA222_ID|0x18,SENSOR_NAME);
+#endif
 	return i2c_add_driver(&bma2x2_driver);
 }
 

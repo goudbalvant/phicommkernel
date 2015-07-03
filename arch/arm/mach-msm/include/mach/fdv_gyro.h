@@ -21,4 +21,7 @@
 #define MANUF_RICHPOWER        "RichPower"
 #define MANUF_RICHPOWER_ID     0x06100000
 
+#define MANUF_INVENSENSE       "Invensense"
+#define MANUF_INVENSENSE_ID    0x06200000
+
 #endif

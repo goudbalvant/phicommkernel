@@ -24,4 +24,6 @@
 #define MANUF_TAOS          "Taos"
 #define MANUF_TAOS_ID       0x03200000
 
+#define MANUF_STK           "STK"
+#define MANUF_STK_ID        0x03300000
 #endif
