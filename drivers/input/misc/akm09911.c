@@ -60,8 +60,8 @@ struct akm_sensor_state {
 	bool power_on;
 	uint8_t mode;
 };
-
-static int layout_temp=8;
+//DYC change layout
+static int layout_temp=7;
 struct akm_compass_data {
 	struct i2c_client	*i2c;
 	struct input_dev	*input;
