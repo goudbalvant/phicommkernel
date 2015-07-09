@@ -60,8 +60,12 @@ struct akm_sensor_state {
 	bool power_on;
 	uint8_t mode;
 };
-//DYC change layout
+//xianjuxiang change layout 20150708
+#ifdef CONFIG_PHICOMM_BOARD_E653Lw
 static int layout_temp=7;
+#else
+static int layout_temp=8;
+#endif
 struct akm_compass_data {
 	struct i2c_client	*i2c;
 	struct input_dev	*input;
