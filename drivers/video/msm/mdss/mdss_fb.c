@@ -14,6 +14,15 @@
  * GNU General Public License for more details.
  */
 
+/* =======================================================================
+ *
+ * when        	who         	why                           		comment tag
+ *
+ * ----------	---------	-------------------------------------	--------------------------
+ * 2015-07-14	feizhi.guo	improve LCM performance 		FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001
+ *
+ */
+
 #define pr_fmt(fmt)	"%s: " fmt, __func__
 
 #include <linux/bootmem.h>
@@ -235,6 +244,7 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(led_cdev->dev->parent);
 	int bl_lvl;
+	static int last_value = 1;
 
 	if (value > mfd->panel_info->brightness_max)
 		value = mfd->panel_info->brightness_max;
@@ -246,6 +256,12 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 
 	if (!bl_lvl && value)
 		bl_lvl = 1;
+
+//FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001 start
+	if(!last_value)
+		mdelay(360);
+	last_value = bl_lvl;
+//FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001 end
 
 	if (!IS_CALIB_MODE_BL(mfd) && (!mfd->ext_bl_ctrl || !value ||
 							!mfd->bl_level)) {
