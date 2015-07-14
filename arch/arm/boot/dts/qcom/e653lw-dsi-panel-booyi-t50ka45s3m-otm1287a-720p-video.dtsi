@@ -247,8 +247,8 @@
 		  	29 01 00 00 00 00 02 00 00             //Orise mode disable
 		  	29 01 00 00 00 00 04 ff ff ff ff
 
-			05 01 00 00 C8 00 02 11 00
-			05 01 00 00 64 00 02 29 00];
+			05 01 00 00 32 00 02 11 00
+			05 01 00 00 00 00 02 29 00];
 
 		qcom,mdss-dsi-off-command = [05 01 00 00 00 00 02 28 00
 					05 01 00 00 78 00 02 10 00];
@@ -274,6 +274,6 @@
 		qcom,mdss-dsi-mdp-trigger = "none";
 		qcom,mdss-dsi-pwm-gpio = <&pm8909_mpps 2 0>;
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_pwm";
-		qcom,mdss-dsi-reset-sequence = <1 5>, <0 30>, <1 30>;
+		qcom,mdss-dsi-reset-sequence = <1 5>, <0 10>, <1 5>;
 	};
 };
