@@ -2921,6 +2921,7 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
     {
         GTP_ERROR("GTP request IO port failed.");
         kfree(ts);
+        ts = NULL;
 		goto exit_free_client_data;
     }
 	ret = goodix_power_init(ts);

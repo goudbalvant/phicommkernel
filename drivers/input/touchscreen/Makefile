@@ -87,3 +87,4 @@ else
 endif
 obj-$(CONFIG_TOUCHSCREEN_BU21150)	+= bu21150.o
 obj-$(CONFIG_INPUT_MT_WRAPPER)		+= input_mt_wrapper.o
+obj-$(CONFIG_TOUCHSCREEN_MSTAR28XX) += jd_3.0/

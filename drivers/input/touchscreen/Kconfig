@@ -1041,6 +1041,16 @@ config TOUCHSCREEN_GT9XX
 source "drivers/input/touchscreen/gt9xx/Kconfig"
 source "drivers/input/touchscreen/gt9xx-new/Kconfig"
 
+config TOUCHSCREEN_MSTAR28XX 
+	bool "mstar touchpanel mstar28xx series"
+	depends on I2C
+	help
+	  Say Y here if you have a Goodix GT9xx touchscreen.
+	  Gt9xx controllers are multi touch controllers which can
+	  report 5 touches at a time.
+
+          If unsure, say N.
+
 config TOUCHSCREEN_BU21150
 	tristate "JDI AFE BU21150"
 	depends on SPI_MASTER

@@ -51,6 +51,9 @@
 #define FT5336_TS               "ft5336_ts"  
 #define FT5336_TS_ID            0x02A00000 
 
+#define MANUF_MSTAR				"mstar"
+#define MANUF_MSTAR_ID_JUNDA	0x02A00000
+
 #define X130V_BYD_TP_PN         ToString(810000869) 
 #define X130V_FEIXUN_TP_PN      ToString(907000089) 
 
