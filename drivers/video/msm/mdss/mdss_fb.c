@@ -258,8 +258,8 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 		bl_lvl = 1;
 
 //FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001 start
-	if(!last_value)
-		mdelay(360);
+	if(!last_value) ;
+//		mdelay(360);
 	last_value = bl_lvl;
 //FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001 end
 
