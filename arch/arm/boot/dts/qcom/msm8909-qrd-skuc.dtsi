@@ -244,6 +244,25 @@
 		invn,place = "Portrait Down Back Side";
 	};
 
+		stk@48 {
+			compatible = "stk,stk3x1x";
+			reg = <0x48>;
+			interrupt-parent = <&msm_gpio>;
+			interrupts = <94 0x2>;
+			vdd-supply = <&pm8909_l17>;
+			vio-supply = <&pm8909_l6>;
+			stk,irq-gpio = <&msm_gpio 94 0x02>;
+			stk,transmittance = <340>;
+			stk,state-reg = <0x00>;
+			stk,psctrl-reg = <0x71>;
+			stk,alsctrl-reg = <0x38>;
+			stk,ledctrl-reg = <0xFF>;
+			stk,wait-reg = <0x07>;
+			stk,ps-thdh = <150>;
+			stk,ps-thdl = <100>;
+			stk,use-fir;
+		};
+
 	akm@c {	
 		      	compatible = "ak,ak09911";	
 		      	reg = <0x0c>;
