@@ -20,7 +20,7 @@
  *
  * ----------	---------	-------------------------------------	--------------------------
  * 2015-07-14	feizhi.guo	improve LCM performance 		FEIXUN_IMPROVE_LCM_PERFORMANCE_GUOFEIZHI_001
- *
+ * 2015-07-15	feizhi.guo	enable boot without LCM connected 	FEIXUN_BOOT_GUOFEIZHI_001
  */
 
 #define pr_fmt(fmt)	"%s: " fmt, __func__
@@ -1210,9 +1210,16 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 	mutex_unlock(&mfd->bl_lock);
 }
 
+extern unsigned char LCM_EXIST_FLAG;
 static int mdss_fb_start_disp_thread(struct msm_fb_data_type *mfd)
 {
 	int ret = 0;
+
+//FEIXUN_BOOT_GUOFEIZHI_001 start
+//when there's no lcm connected, do not sent display data actually.
+if (!LCM_EXIST_FLAG)
+	return ret;
+//FEIXUN_BOOT_GUOFEIZHI_001 end
 
 	pr_debug("%pS: start display thread fb%d\n",
 		__builtin_return_address(0), mfd->index);

@@ -16,6 +16,7 @@
  *
  * ----------	---------	-------------------------------------	--------------------------
  * 2015-06-03	yaming.chen	LCM external power supply		FEIXUN_LCM_EXTERNAL_POWER_SUPPLY_CHENYAMING_001
+ * 2015-07-15	feizhi.guo	enable boot without LCM connected 	FEIXUN_BOOT_GUOFEIZHI_001
  *
  */
 
@@ -41,6 +42,7 @@
 
 static int mdss_dsi_pinctrl_set_state(struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 					bool active);
+unsigned char LCM_EXIST_FLAG = 1;
 
 static int mdss_dsi_regulator_init(struct platform_device *pdev)
 {
@@ -1387,6 +1389,13 @@ static struct device_node *mdss_dsi_find_panel_of_node(
 				panel_name[i] = *(stream + i);
 			panel_name[i] = 0;
 		}
+
+//FEIXUN_BOOT_GUOFEIZHI_001 start
+		if (!strcmp(panel_name, "qcom,mdss_dsi_default_fwvga_panel_video")){
+			pr_err("Fred: panel was not connected\n");
+			LCM_EXIST_FLAG = 0;
+		}
+//FEIXUN_BOOT_GUOFEIZHI_001 end
 
 		pr_debug("%s:%d:%s:%s\n", __func__, __LINE__,
 			 panel_cfg, panel_name);
