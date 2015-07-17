@@ -1125,7 +1125,6 @@ static int mdp3_ctrl_display_commit_kickoff(struct msm_fb_data_type *mfd,
 	int rc = 0;
 	static bool splash_done;
 	struct mdss_panel_data *panel;
-
 	if (!mfd || !mfd->mdp.private1)
 		return -EINVAL;
 
@@ -1220,7 +1219,7 @@ static int mdp3_ctrl_display_commit_kickoff(struct msm_fb_data_type *mfd,
 			msleep(((1000 / panel_info->mipi.frame_rate) + 1) *
 					panel_info->mipi.post_init_delay);
 		else
-			msleep(1000 / panel_info->mipi.frame_rate);
+			msleep(10 * 1000 / panel_info->mipi.frame_rate);
 		mdp3_session->first_commit = false;
 	}
 
